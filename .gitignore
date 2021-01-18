@@ -1,0 +1,47 @@
+# --- GITHUB C++ DEFAULTS
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+#Security files
+*.orig
+
+# --- VICTOR
+
+# Do not count the CNetwork lib, which it's a repo itself
+CNetwork/
+
+#Do not count proteus exe folder (just in case) and also ignore data
+.vscode/
+*.graphml
+
