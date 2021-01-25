@@ -17,16 +17,123 @@
 
 using namespace std;
 
-//All network topologies (different implementation depending on NETWORK, see below)
-//TODO declarar basura
+// --- Declare functions --- //
+void show_help();
+
+int same_level(const int index_i, const int index_j, const int nlevels, const vector<int> &neurons_level);
+void hm_random(CNetwork<> &net, const int nlevels, const vector<int> &levels, const vector<double> &k_level);
+
+void get_node_cumulative(const int neurons_cluster, const double beta, vector<double> &cumuweight);
+int get_random_node(const int cluster, const int neurons_cluster, const vector<double> &cumuweight);
+void hm_core(CNetwork<> &net, const int nlevels, const vector<int> &levels, const vector<double> &k_level, const vector<double> &gamma_level);
+
+// --- Random number generation --- //
+mt19937 gen(85345385434);
+uniform_real_distribution<double> ran_u(0.0, 1.0);
+
+// --- Global constants --- //
+int N;
+
 
 // --- Main --- ///
 // This is used to construct and export the desired network to a file
 
 int main(int argc, char* argv[])
 {
+    int i;
+
+    int nlevels = 0;
+    bool generate_random = true;
+    int nargs;
+
+    CNetwork<> net;
+
+    vector<int> levels;
+    vector<double> klevel;
+    vector<double> glevel;
+
+    if (argv[1] == "-help" || argv[1] == "--help" || argv[1] == "-h" || argv[1] == "--h") 
+    {
+        show_help();
+        return EXIT_SUCCESS;
+    }
+
+    generate_random = !(string(argv[1]) == "--core");
+    nlevels = stoi(argv[2]);
+
+    if (generate_random)
+    {
+        nargs = 3 + nlevels * 2;
+        if (nargs != argc)
+        {
+            cout << nargs << " ! " << argc << endl;
+            cout << "Wrong number of arguments. Correct format:" << endl;
+            show_help();
+            return EXIT_SUCCESS;
+        }
+
+        levels = vector<int>(nlevels);
+        klevel = vector<double>(nlevels);
+
+        N=1;
+        for (i=0; i < nlevels; i++)
+        {
+            levels[i] = stoi(argv[3 + i]);
+            N *= levels[i];
+            klevel[i] = stod(argv[3 + nlevels + i]);
+        }
+
+        net = CNetwork<>(N);
+        net.add_nodes(N);
+
+        hm_random(net, nlevels, levels, klevel);
+    }
+    else
+    {
+        nargs = 3 + nlevels * 3;
+        if (nargs != argc)
+        {
+            cout << "Wrong number of arguments. Correct format:" << endl;
+            show_help();
+            return EXIT_SUCCESS;
+        }
+
+        levels = vector<int>(nlevels);
+        klevel = vector<double>(nlevels);
+        glevel = vector<double>(nlevels);
+
+        N=1;
+        for (i=0; i < nlevels; i++)
+        {
+            levels[i] = stoi(argv[3 + i]);
+            N *= levels[i];
+            klevel[i] = stod(argv[3 + nlevels + i]);
+            glevel[i] = stod(argv[3 + nlevels*2 + i]);
+        }
+        net = CNetwork<>(N);
+        net.add_nodes(N);
+
+        hm_core(net, nlevels, levels, klevel, glevel);
+    }
+
     return EXIT_SUCCESS;
 }
+
+void show_help()
+{
+    cout << "create-network [mode] [M] [n1 n2 ... nM] [k1 k2 ... kM] [g1 g2 ... gM]" << endl << endl;
+    cout << "[mode]: either --random or --core. Selects the network to construct." << endl;
+    cout << "[M]: number of hierarchical levels. Integer." << endl;
+    cout << "[n1 n2 ... nM]: number of elements in each hierarchical level. Integers." << endl;
+    cout << "[k1 k2 ... kM]: connectivity in each hierarchical level. Floats." << endl << endl;
+    cout << "[g1 g2 ... gM]: Only in core mode. Scale-free exponent in each hierarchical level. Floats." << endl << endl;
+    cout << "Examples:" << endl;
+    cout  << "create-network --random 3   40 20 5   10.0 2.0 1.5" << endl;
+    cout <<  "create-network --core 2  40 20   10.0 2.0   0.0 1.5" << endl << endl;
+    cout << "Please read documentation for more info on parameters and its behaviour." << endl;
+}
+
+
 
 // --- Functions --- ///
 // Implementation of the network creation itself. Please read documentation notes for implementation details
@@ -54,14 +161,12 @@ int same_level(const int index_i, const int index_j, const int nlevels, const ve
 }
 
 //Random modular graph
-void hm_random(WCN &net, const int nlevels, const vector<int> &levels, const vector<double> &k_level)
+void hm_random(CNetwork<> &net, const int nlevels, const vector<int> &levels, const vector<double> &k_level)
 {
     int i,j;
 
     //First of all get number of hierarchical levels
-    vector<int> n_elements_level(nlevels);      //Number of modules in each level(lower level modules are neurons)
     vector<int> n_neurons_level(nlevels);       //Number of neurons in each level (lower level modules are neurons). 
-    vector<double> k_level(nlevels);            //Connectivity for each level. 
     vector<double> p_level(nlevels);            //Probability of connection for each level. 
 
     //Aux variable to store at which level neurons coincide
@@ -69,18 +174,14 @@ void hm_random(WCN &net, const int nlevels, const vector<int> &levels, const vec
 
     //Store total number of neurons up to level k and connection probability 
     //First level is just the number of neurons inside the cluster
-    n_elements_level[0] = levels[0];
+    n_neurons_level[0] = levels[0];
+    p_level[0] = k_level[0] / (1.0 * n_neurons_level[i]);
     for (i=1; i < nlevels; i++)
     {
-        n_neurons_level[i] = levels[i] * n_elements_level[i-1];
+        n_neurons_level[i] = levels[i] * n_neurons_level[i-1];
         p_level[i] = k_level[i] / (1.0 * n_neurons_level[i]); //Connection probability
     }
-
-    //Last level contains all neurons, so make a consistency check
-    if (N != n_neurons_level[nlevels-1]) throw runtime_error("Critical error: the number of neurons indicated does not coincide with hierarchical level computation, that was " + to_string(n_neurons_level[nlevels-1]));
     
-    net.add_nodes(N);
-
     //Erdos-Renyi-like construction with the adequate prob.
     for (i=0; i < N; i++)
     {
@@ -98,10 +199,13 @@ void hm_random(WCN &net, const int nlevels, const vector<int> &levels, const vec
         }   
     }
 
+    //Record the used graph
+    net.write_graphml("hmrandom", vector<string>());
+    net.write_mtx("hmrandom");
+
 }
 
 //Core-periphery
-
 
 //Auxiliary function to get the cumulative probabilities for each neuron at each hierarchical level
 void get_node_cumulative(const int neurons_cluster, const double beta, vector<double> &cumuweight)
@@ -113,18 +217,22 @@ void get_node_cumulative(const int neurons_cluster, const double beta, vector<do
     if (beta < 0.0)
     {
         vector<double> weights(neurons_cluster);
-        cumuweight = vector<double>(neurons_cluster, 0.0);
+        cumuweight = vector<double>(neurons_cluster + 1, 0.0); //+1 to start the cumulative at 0
+
+        normalization = 0.0;
 
         //Store weights and compute the complete sum in order to compute later the probabilities
-        for (i=0; i <= neurons_cluster; i++) 
+        for (i=0; i < neurons_cluster; i++) 
         {
             weights[i] = pow(i+1, beta);
             normalization += weights[i];
         }
 
         //Then directly get the cumulatives
-        cumuweight[0] = weights[0] / normalization;
-        for (i=1; i < neurons_cluster; i++) cumuweight[i] = cumuweight[i-1] + weights[i] / normalization;
+        cumuweight[0] = 0.0;
+        cumuweight[1] = weights[0] / normalization;
+        for (i=2; i < neurons_cluster; i++) cumuweight[i] = cumuweight[i-1] + weights[i-1] / normalization;
+
     }
     else
     {
@@ -147,12 +255,12 @@ int get_random_node(const int cluster, const int neurons_cluster, const vector<d
     auto lower = lower_bound(cumuweight.begin(), cumuweight.end(), r);
 
     //Return it as integer and not as iterator
-    return distance(cumuweight.begin(), lower) + cluster * neurons_cluster;
+    return distance(cumuweight.begin(), lower) - 1 + cluster * neurons_cluster;
 }
 
 //Create the hierarchical network.
 //Input arguments: nlevels {list_n_elements} {list_k}
-void create_network(WCN &net, const int nlevels, const vector<int> &levels, const vector<double> &k_level, const vector<double> &gamma_level)
+void hm_core(CNetwork<> &net, const int nlevels, const vector<int> &levels, const vector<double> &k_level, const vector<double> &gamma_level)
 {
     int i,j,level,link,cluster; //Counters
     int nclusters;
@@ -162,27 +270,70 @@ void create_network(WCN &net, const int nlevels, const vector<int> &levels, cons
     int comm1, comm2;       //Indices of two randomly selected communities
     double beta;            //Exponent of this level
 
-    vector<int> n_elements_level(nlevels);      //Number of modules in each level(lower level modules are neurons)
     vector<int> n_neurons_level(nlevels);       //Number of neurons in each level (lower level modules are neurons). 
 
-    //This should have, as arguments: nlevels {list_n_elements} {list_k}, so 1+2*nlevels arguments. If not, throw error
-    if (1 + 3*nlevels != network_params.size()) throw runtime_error("Critical error: incorrect number of network parameters. Expected 4");
+    vector<double> cumulative;                  //Cumulative weight for obtaining random numbers from power-law distrib.
 
     //Fill the information provided 
-    for (i=0; i < nlevels; i++)
+    n_neurons_level[0] = levels[0];
+    for (i=1; i < nlevels; i++)
     {
-        //network_params uses i+1 since 0 is nlevels
-        n_elements_level[i] = levels[i]
-
-        //Get total number of neurons until this level. First level is just the number of neuron, so make distinc cases 
         n_neurons_level[i] = levels[i] * n_neurons_level[i-1]; 
     }
-    //Last level contains all neurons, so make a consistency check
-    if (N != n_neurons_level[nlevels-1]) throw runtime_error("Critical error: the number of neurons indicated does not coincide with hierarchical level computation, that was " + to_string(n_neurons_level[nlevels-1]));
     
-    //Once the consistency check is done, add nodes and select weights for scale free network
-    net.add_nodes(N);
-    vector<double> cumulative;
+    //Now do the connections level by level
+    for (level=0; level < nlevels; level++)
+    {
+        //Get the number of links adequate to this level, expected randomly, and set the power-law exponents
+        nlinks = 0.5 * k_level[level] * n_neurons_level[level]; 
+        beta = gamma_level[level] > 1.0 ? 1.0 / (gamma_level[level] - 1.0) : 0.0;
+
+        //Compute cumulative weight of all the neurons inside each cluster
+        //Cumulative is a vector of size "numbers of neurons in this level"
+        get_node_cumulative(n_neurons_level[level], -beta, cumulative); 
+ 
+        //Get the number of clusters at this hierarchical level
+        nclusters = N / n_neurons_level[level];
+
+        //Make connections inside those clusters
+        for (cluster=0; cluster < nclusters; cluster++)
+        {
+            link = 0;
+            //Set all necessary links...
+            while (link <= nlinks)
+            {
+                //Select two neurons from the same community using the scale-free cumulative weight
+                do
+                {
+                    i = get_random_node(cluster, n_neurons_level[level], cumulative);
+                    j = get_random_node(cluster, n_neurons_level[level], cumulative);
+                } while (i == j);
+
+                if (i >= N || j >= N || i < 0 || j < 0)
+                {
+                    cout << i << " " << j << " " << cluster << " " << level << " " << n_neurons_level[level] << endl;
+                    return;
+                }
+
+                //Connect them if they are not already
+                if (net.get_link_index(i,j) == -1) 
+                {
+                    net.add_link(i,j);
+                    link++;
+                }
+            }
+        }
+
+        //Now we have connected the neurons inside this level, connect the clusters between them in next level!
+    }
+
+    //Record the used graph
+    net.write_graphml("hmcore", vector<string>());
+    net.write_mtx("hmcore");
+
+
+
+/*
 
     //Now construct the network. We do first the first level, connecting the individual neurons
     //Number of links to generate in this level (number of links in each cluster)
@@ -195,14 +346,14 @@ void create_network(WCN &net, const int nlevels, const vector<int> &levels, cons
     //Fill the node weights for this level
     get_node_cumulative(n_neurons_level[0], -beta, cumulative); 
 
-    //Compute the total number of clusters at the first level
-    nclusters = 1;
-    for(i=1; i < nlevels; i++) nclusters *= n_elements_level[i];
+    //At the first level, each neuron works as a cluster itself
+    //nclusters = N;
+    //for(i=1; i < nlevels; i++) nclusters *= n_elements_level[i];
     //TODO CHECK: creo que este nclusters se puede obtener de forma mas simple
-
+*/
     //Then set the links. This part will be different in higher levels. 
     //Each cluster will have nlinks, in order to have the selected k in this cluster!
-    for (cluster=0; cluster < nclusters; cluster++)
+    /*for (cluster=0; cluster < nclusters; cluster++)
     {
         link = 0;
         while (link < nlinks)
@@ -220,9 +371,6 @@ void create_network(WCN &net, const int nlevels, const vector<int> &levels, cons
                 net.add_link(i,j);
                 link++;
             }
-            //TODO CHECK: tal vez poner un número de intentos para hacer eso
-            //si falla, dar el link por perdido o hacer conexiones random... ver qué pasa
-            //o en qué casos no se conecta
         }
     }
 
@@ -234,7 +382,7 @@ void create_network(WCN &net, const int nlevels, const vector<int> &levels, cons
         beta = gamma_level[level] > 1.0 ? 1.0 / (gamma_level[level] - 1.0) : 1.0; 
 
         //Set the cumulative probability of selecting each node
-        get_node_cumulative(n_neurons_level[level-1], -beta, cumulative); 
+        get_node_cumulative(n_neurons_level[level], -beta, cumulative); //TODO CHECK first it was level-1
 
         //Compute the number of modules in this level. Now each 'cluster' (module) contains a
         //a set of clusters of the previous level. Last level only has 1 cluster.
@@ -249,13 +397,25 @@ void create_network(WCN &net, const int nlevels, const vector<int> &levels, cons
             {                
                 //Select two nodes from two different communities, from the current cluster. 
                 //Ensure they are different communities
-                do
+                if (n_elements_level[level] > 2)
                 {
-                    comm1 = int(ran_u(gen) * n_elements_level[level]) + cluster * n_elements_level[level];
-                    comm2 = int(ran_u(gen) * n_elements_level[level]) + cluster * n_elements_level[level];
-                } while (comm1 == comm2);
-
-                //And now obtain a neuron from that community. 
+                    do
+                    {
+                        comm1 = int(ran_u(gen) * n_elements_level[level]) + cluster * n_elements_level[level];
+                        comm2 = int(ran_u(gen) * n_elements_level[level]) + cluster * n_elements_level[level];
+                    } while (comm1 == comm2);
+                }
+                else if (n_elements_level[level] == 2)
+                {
+                    comm1 = 0;
+                    comm2 = 1;
+                }
+                else
+                {
+                    comm1 == comm2 = 0;
+                }
+                
+                //And now obtain a neuron from those communities. 
                 i = get_random_node(comm1, n_neurons_level[level-1], cumulative);
                 j = get_random_node(comm2, n_neurons_level[level-1], cumulative);
 
@@ -268,7 +428,9 @@ void create_network(WCN &net, const int nlevels, const vector<int> &levels, cons
             }
         }
     }
-
+*/
     //Record the used graph
-    net.write_graphml("generated_network", vector<string>());
+    //net.write_graphml("hmcore", vector<string>());
+    //net.write_mtx("hmcore");
+
 }
