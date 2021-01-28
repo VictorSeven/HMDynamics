@@ -52,7 +52,7 @@ int main(int argc, char* argv[])
     vector<double> klevel;
     vector<double> glevel;
 
-    if (argv[1] == "-help" || argv[1] == "--help" || argv[1] == "-h" || argv[1] == "--h") 
+    if (argc <= 2)
     {
         show_help();
         return EXIT_SUCCESS;

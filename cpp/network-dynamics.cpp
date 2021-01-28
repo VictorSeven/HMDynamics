@@ -10,6 +10,13 @@
 
 #define MAXNETSIZE 10000
 
+#define SINGLE 0 
+#define DIAGRAM 1 
+
+#ifndef MODE
+#define MODE DIAGRAM
+#endif 
+
 //Include libraries
 #include <iostream>
 #include <cstdlib>
@@ -29,19 +36,28 @@ bool set_up_network(CNetwork<double> &net, const string filename);
 void step_relaxation(CNetwork<double> &net);
 void step(CNetwork<double> &net);
 
+void simulate_single(CNetwork<double> &net, ofstream &output);
+void simulate_diagram(CNetwork<double> &net, const double q0, const double qf, const int nq, ofstream &output);
 
 // --- Random number generation --- //
 mt19937 gen(85345385434);
 uniform_real_distribution<double> ran_u(0.0, 1.0);
+normal_distribution<double> ran_g(0.0, 1.0);
 
 // --- Global constants --- //
 int N;
 
 double w,q,s;
+string networkname = "hmrandom";
+string filename = "kuramoto";
+
 
 const double dt = 0.01;
-const double sqdt = sqrt(0.01);
+const double sqdt = sqrt(dt);
 
+const double tf = 100.0;
+const double trelax = 50.0;
+const double tmeasure = 1.0;
 
 const complex<double> I = complex<double>(0.0, 1.0);
 
@@ -56,61 +72,49 @@ int main(int argc, char* argv[])
     //Counters
     int i,j;
 
-    //Time-related variables
-    double t;
-
-    const double trelax = 100.0;            //Relaxation time
-    const double tf = 100.0;                //Simulation time
-    const double tmeasure = 1.0;            //Time between measurements
-    const int measure_its = tmeasure / dt;   //Number of iterations to do between measurements
-
-    //Variables to make averages
-    double av_r  = 0.0;    
-    double av_r2 = 0.0;
-
     //Define the network and the path to it
     CNetwork<double> net(MAXNETSIZE);
-    string filename = "hmrandom";
 
     //Input/output stuff
     bool correct_setup;
 
-    ofstream output;
+    ofstream output;    //File to write stuff
 
     //Set up the network, including initial conditions
-    correct_setup = set_up_network(net, filename);
+    correct_setup = set_up_network(net, networkname);
     if (!correct_setup) 
     {
         cout << "[HMDYNAMICS]: Network not loaded, execution aborted" << endl;
         return EXIT_FAILURE;
     }
 
-    //Then make simulations. First relaxation, then measurement.
-    for (t = 0.0; t <= trelax; t += dt) step_relaxation(net);
 
-    t = 0.0;
-    while(t < tf)
-    {
-        //Allow a bit of time between measures
-        for (i = 0; i < measure_its - 1; i++)
+    #if MODE==SINGLE
+        output.open(filename);
+        simulate_single(net, &output);
+        output.close();
+    #elif MODE==DIAGRAM
+        
+        double q0, qf;
+        int nq;
+        cout << argc << endl;
+        if (argc == 7)
         {
-            step_relaxation(net);
-            t += dt;
+            w  = stod(argv[1]);
+            s  = stod(argv[2]);
+            q0 = stod(argv[3]);
+            qf = stod(argv[4]);
+            nq = stoi(argv[5]);
+            filename = string(argv[6]); 
         }
-
-        //Last step and measure
-        step(net);
-        av_r  += r;
-        av_r2 += r*r;
-        t += dt;
-    }
-
-    output.open(filename);
-    output << q << " " << av_r << " " << av_r2 << endl;
-    output.close();
-
+        simulate_diagram(net, q0, qf, nq, output);
+    #endif
     return EXIT_SUCCESS;
 }
+
+
+// --- Core functions --- //
+// These function do all the core hard work
 
 bool set_up_network(CNetwork<double> &net, const string filename)
 {
@@ -141,7 +145,7 @@ bool set_up_network(CNetwork<double> &net, const string filename)
         y += sin(net[i]);
     }
 
-    z = complex<double>(x,y) / N;
+    z = complex<double>(x,y) / (1.0*N);
     r = abs(z);
     psi = arg(z);
     
@@ -162,11 +166,12 @@ void step_relaxation(CNetwork<double> &net)
     {
         net[i] = dt * (w + q * r * sin(psi - net[i])) + sqdt * ran_g(gen) * s;
 
+        if (i==0) cout << i << " " << net[i] << " " << w << " " << r << " " << psi << " " << s << endl;
         x += cos(net[i]);
         y += sin(net[i]);
     }
 
-    z = complex<double>(x,y) / N;
+    z = complex<double>(x,y) / (1.0*N);
     r = abs(z);
     psi = arg(z);
 }
@@ -185,11 +190,62 @@ void step(CNetwork<double> &net)
     {
         net[i] = dt * (w + q * r * sin(psi - net[i])) + sqdt * ran_g(gen) * s;
 
+        if (i==0) cout << i << " " << net[i] << " " << r << " " << psi << endl;
         x += cos(net[i]);
         y += sin(net[i]);
     }
 
-    z = complex<double>(x,y) / N;
+    z = complex<double>(x,y) / (1.0*N);
     r = abs(z);
     psi = arg(z);
+}
+
+// --- Functions for phase diagrams and so on
+
+void simulate_single(CNetwork<double> &net, ofstream &output)
+{
+    const int measure_its = tmeasure / dt;   //Number of iterations to do between measurements
+    const int nmeasures = tf / tmeasure;     //Number of measures we did
+    double t;
+
+    int i;
+
+    //Variables to make averages
+    double av_r  = 0.0;    
+    double av_r2 = 0.0;
+    //Then make simulations. First relaxation, then measurement.
+    for (t = 0.0; t <= trelax; t += dt) step_relaxation(net);
+
+    t = 0.0;
+    while(t < tf)
+    {
+        //Allow a bit of time between measures
+        for (i = 0; i < measure_its - 1; i++)
+        {
+            step_relaxation(net);
+            t += dt;
+        }
+
+        //Last step and measure
+        step(net);
+        av_r  += r;
+        av_r2 += r*r;
+        t += dt;
+    }
+
+    output << q << " " << av_r/nmeasures << " " << av_r2/nmeasures << endl;
+    
+    return;
+}
+
+void simulate_diagram(CNetwork<double> &net, const double q0, const double qf, const int nq, ofstream &output)
+{
+    const double dq = (qf - q0) / (1.0 * nq);
+    cout << dq << " " << filename << endl;
+    output.open(filename);
+    for (q=q0; q <= qf; q += dq)
+    {
+        simulate_single(net, output);
+    }
+    output.close();
 }
