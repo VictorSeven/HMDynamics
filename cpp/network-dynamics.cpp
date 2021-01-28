@@ -43,11 +43,13 @@ void simulate_diagram(CNetwork<double> &net, const double q0, const double qf, c
 mt19937 gen(85345385434);
 uniform_real_distribution<double> ran_u(0.0, 1.0);
 normal_distribution<double> ran_g(0.0, 1.0);
+cauchy_distribution<double> lorentzian(0.0, 1.0);
 
 // --- Global constants --- //
 int N;
 
-double w,q,s;
+vector<double> w;
+double w0,delta,q,s;
 string networkname = "hmrandom";
 string filename = "kuramoto";
 
@@ -55,8 +57,8 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-const double tf = 100.0;
-const double trelax = 50.0;
+const double tf = 300.0;
+const double trelax = 150.0;
 const double tmeasure = 1.0;
 
 const complex<double> I = complex<double>(0.0, 1.0);
@@ -80,24 +82,10 @@ int main(int argc, char* argv[])
 
     ofstream output;    //File to write stuff
 
-    //Set up the network, including initial conditions
-    correct_setup = set_up_network(net, networkname);
-    if (!correct_setup) 
-    {
-        cout << "[HMDYNAMICS]: Network not loaded, execution aborted" << endl;
-        return EXIT_FAILURE;
-    }
 
 
     #if MODE==SINGLE
-        output.open(filename);
-        simulate_single(net, &output);
-        output.close();
-    #elif MODE==DIAGRAM
-        
-        double q0, qf;
-        int nq;
-        cout << argc << endl;
+
         if (argc == 7)
         {
             w  = stod(argv[1]);
@@ -107,6 +95,48 @@ int main(int argc, char* argv[])
             nq = stoi(argv[5]);
             filename = string(argv[6]); 
         }
+
+        //Set up the network, including initial conditions
+        correct_setup = set_up_network(net, networkname);
+        if (!correct_setup) 
+        {
+            cout << "[HMDYNAMICS]: Network not loaded, execution aborted" << endl;
+            return EXIT_FAILURE;
+        }
+
+        output.open(filename);
+        simulate_single(net, &output);
+        output.close();
+    #elif MODE==DIAGRAM
+        
+        double q0, qf;
+        int nq;
+
+        if (argc == 9)
+        {
+            w0    = stod(argv[1]);
+            delta = stod(argv[2]);
+            s     = stod(argv[3]);
+            q0    = stod(argv[4]);
+            qf    = stod(argv[5]);
+            nq    = stoi(argv[6]);
+            networkname = string(argv[7]);
+            filename = string(argv[8]); 
+        }
+        else
+        {
+            cout << "[HMDYNAMICS]: incorrect number of arguments" << endl;
+            return EXIT_SUCCESS;        
+        }
+
+        //Set up the network, including initial conditions
+        correct_setup = set_up_network(net, networkname);
+        if (!correct_setup) 
+        {
+            cout << "[HMDYNAMICS]: Network not loaded, execution aborted" << endl;
+            return EXIT_SUCCESS;
+        }
+        
         simulate_diagram(net, q0, qf, nq, output);
     #endif
     return EXIT_SUCCESS;
@@ -116,30 +146,33 @@ int main(int argc, char* argv[])
 // --- Core functions --- //
 // These function do all the core hard work
 
-bool set_up_network(CNetwork<double> &net, const string filename)
+bool set_up_network(CNetwork<double> &net, const string path_to_network)
 {
     int i;
     bool network_loaded_ok = false;
 
     double x,y;
 
-    //int L;
-
     //Read network from file
-    network_loaded_ok = net.read_mtx(filename);
+    network_loaded_ok = net.read_mtx(path_to_network);
     if (!network_loaded_ok) return false;
     
     N = net.get_node_count();
+    
+    //Link stuff
     //L = net.get_link_count();
-
     //for (i=0; i < L; i++) net.get_link(i) = q; 
 
+    //Distribution of frequencies
+    lorentzian = cauchy_distribution<double>(w0, delta);
+
     //Set initial conditions
-    z = complex<double>(0.0, 0.0);
     x = y = 0.0;
+    w = vector<double>(N);
     for (i=0; i < N; i++) 
     {
         net[i] = 2.0 * M_2_PI * ran_u(gen);
+        w[i] = lorentzian(gen);
 
         x += cos(net[i]);
         y += sin(net[i]);
@@ -164,9 +197,9 @@ void step_relaxation(CNetwork<double> &net)
 
     for (i=0; i < N; i++)
     {
-        net[i] = dt * (w + q * r * sin(psi - net[i])) + sqdt * ran_g(gen) * s;
+        net[i] += dt * (w[i] + q * r * sin(psi - net[i])) + sqdt * ran_g(gen) * s;
 
-        if (i==0) cout << i << " " << net[i] << " " << w << " " << r << " " << psi << " " << s << endl;
+//        if (i==0) cout << net[i] << " "  << r << " " << psi << " " << w + q*r*sin(psi - net[i]) << endl;
         x += cos(net[i]);
         y += sin(net[i]);
     }
@@ -188,9 +221,9 @@ void step(CNetwork<double> &net)
 
     for (i=0; i < N; i++)
     {
-        net[i] = dt * (w + q * r * sin(psi - net[i])) + sqdt * ran_g(gen) * s;
+        net[i] += dt * (w[i] + q * r * sin(psi - net[i])) + sqdt * ran_g(gen) * s;
 
-        if (i==0) cout << i << " " << net[i] << " " << r << " " << psi << endl;
+//        if (i==0) cout << i << " " << net[i] << " " << r << " " << psi << endl;
         x += cos(net[i]);
         y += sin(net[i]);
     }
@@ -233,7 +266,9 @@ void simulate_single(CNetwork<double> &net, ofstream &output)
         t += dt;
     }
 
-    output << q << " " << av_r/nmeasures << " " << av_r2/nmeasures << endl;
+    av_r /= 1.0 * nmeasures;
+    av_r2 /= 1.0 * nmeasures;
+    output << q << " " << av_r << " " << av_r2 - av_r*av_r << endl;
     
     return;
 }

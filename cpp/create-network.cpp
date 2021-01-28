@@ -33,7 +33,7 @@ uniform_real_distribution<double> ran_u(0.0, 1.0);
 
 // --- Global constants --- //
 int N;
-
+string filename;
 
 // --- Main --- ///
 // This is used to construct and export the desired network to a file
@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
     if (generate_random)
     {
-        nargs = 3 + nlevels * 2;
+        nargs = 3 + nlevels * 2 + 1; //name + program + nlevel + (number+k in each level) + filename
         if (nargs != argc)
         {
             cout << nargs << " ! " << argc << endl;
@@ -82,6 +82,8 @@ int main(int argc, char* argv[])
             N *= levels[i];
             klevel[i] = stod(argv[3 + nlevels + i]);
         }
+        
+        filename = string(argv[argc-1]);
 
         net = CNetwork<>(N);
         net.add_nodes(N);
@@ -90,7 +92,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        nargs = 3 + nlevels * 3;
+        nargs = 3 + nlevels * 3;  //name + program + nlevel + (number+k+gamma in each level) + filename
         if (nargs != argc)
         {
             cout << "Wrong number of arguments. Correct format:" << endl;
@@ -113,6 +115,8 @@ int main(int argc, char* argv[])
         net = CNetwork<>(N);
         net.add_nodes(N);
 
+        filename = string(argv[argc-1]);
+
         hm_core(net, nlevels, levels, klevel, glevel);
     }
 
@@ -121,12 +125,13 @@ int main(int argc, char* argv[])
 
 void show_help()
 {
-    cout << "create-network [mode] [M] [n1 n2 ... nM] [k1 k2 ... kM] [g1 g2 ... gM]" << endl << endl;
+    cout << "create-network [mode] [M] [n1 n2 ... nM] [k1 k2 ... kM] [g1 g2 ... gM] [filename]" << endl << endl;
     cout << "[mode]: either --random or --core. Selects the network to construct." << endl;
     cout << "[M]: number of hierarchical levels. Integer." << endl;
     cout << "[n1 n2 ... nM]: number of elements in each hierarchical level. Integers." << endl;
     cout << "[k1 k2 ... kM]: connectivity in each hierarchical level. Floats." << endl << endl;
-    cout << "[g1 g2 ... gM]: Only in core mode. Scale-free exponent in each hierarchical level. Floats." << endl << endl;
+    cout << "[g1 g2 ... gM]: Only in core mode. Scale-free exponent in each hierarchical level. Floats." << endl;
+    cout << "[filename]: where to save to network. String." << endl << endl;
     cout << "Examples:" << endl;
     cout  << "create-network --random 3   40 20 5   10.0 2.0 1.5" << endl;
     cout <<  "create-network --core 2  40 20   10.0 2.0   0.0 1.5" << endl << endl;
@@ -200,8 +205,8 @@ void hm_random(CNetwork<> &net, const int nlevels, const vector<int> &levels, co
     }
 
     //Record the used graph
-    net.write_graphml("hmrandom", vector<string>());
-    net.write_mtx("hmrandom");
+    net.write_graphml(filename, vector<string>());
+    net.write_mtx(filename);
 
 }
 
@@ -328,6 +333,6 @@ void hm_core(CNetwork<> &net, const int nlevels, const vector<int> &levels, cons
     }
 
     //Record the used graph
-    net.write_graphml("hmcore", vector<string>());
-    net.write_mtx("hmcore");
+    net.write_graphml(filename, vector<string>());
+    net.write_mtx(filename);
 }
