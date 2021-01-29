@@ -41,8 +41,10 @@
 # Do not count the CNetwork lib, which it's a repo itself
 CNetwork/
 
-#Ignore any py on cpp
-cpp/*.py
+#Ignore binaries and networks
+networks/
+cpp/bin/
+
 
 #Do not count proteus exe folder (just in case) and also ignore data
 .vscode/

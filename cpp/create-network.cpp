@@ -66,7 +66,6 @@ int main(int argc, char* argv[])
         nargs = 3 + nlevels * 2 + 1; //name + program + nlevel + (number+k in each level) + filename
         if (nargs != argc)
         {
-            cout << nargs << " ! " << argc << endl;
             cout << "Wrong number of arguments. Correct format:" << endl;
             show_help();
             return EXIT_SUCCESS;
@@ -222,7 +221,7 @@ void get_node_cumulative(const int neurons_cluster, const double beta, vector<do
     if (beta < 0.0)
     {
         vector<double> weights(neurons_cluster);
-        cumuweight = vector<double>(neurons_cluster + 1, 0.0); //+1 to start the cumulative at 0
+        cumuweight = vector<double>(neurons_cluster, 0.0);
 
         normalization = 0.0;
 
@@ -234,9 +233,8 @@ void get_node_cumulative(const int neurons_cluster, const double beta, vector<do
         }
 
         //Then directly get the cumulatives
-        cumuweight[0] = 0.0;
-        cumuweight[1] = weights[0] / normalization;
-        for (i=2; i < neurons_cluster; i++) cumuweight[i] = cumuweight[i-1] + weights[i-1] / normalization;
+        cumuweight[0] = weights[0] / normalization;
+        for (i=1; i < neurons_cluster; i++) cumuweight[i] = cumuweight[i-1] + weights[i] / normalization;
 
     }
     else
@@ -244,7 +242,10 @@ void get_node_cumulative(const int neurons_cluster, const double beta, vector<do
         //Random connectivity, all same weight
         double weight =  1.0 / neurons_cluster;
         cumuweight = vector<double>(neurons_cluster, 0.0);
-        for (i=0; i < neurons_cluster; i++) cumuweight[i] = i * weight;
+        for (i=0; i < neurons_cluster-1; i++) cumuweight[i] = i * weight;
+        //Lock last one to 1. Float errors would lead to 0.9999... that lead with smapp prob to
+        // indices i==N when taking random numbers
+        cumuweight[neurons_cluster-1] = 1.0; 
     }
 
 }
@@ -260,7 +261,8 @@ int get_random_node(const int cluster, const int neurons_cluster, const vector<d
     auto lower = lower_bound(cumuweight.begin(), cumuweight.end(), r);
 
     //Return it as integer and not as iterator
-    return distance(cumuweight.begin(), lower) - 1 + cluster * neurons_cluster;
+    return distance(cumuweight.begin(), lower) + cluster * neurons_cluster;
+ 
 }
 
 //Create the hierarchical network.
@@ -313,12 +315,6 @@ void hm_core(CNetwork<> &net, const int nlevels, const vector<int> &levels, cons
                     i = get_random_node(cluster, n_neurons_level[level], cumulative);
                     j = get_random_node(cluster, n_neurons_level[level], cumulative);
                 } while (i == j);
-
-                if (i >= N || j >= N || i < 0 || j < 0)
-                {
-                    cout << i << " " << j << " " << cluster << " " << level << " " << n_neurons_level[level] << endl;
-                    return;
-                }
 
                 //Connect them if they are not already
                 if (net.get_link_index(i,j) == -1) 
