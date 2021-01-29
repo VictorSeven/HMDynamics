@@ -188,16 +188,23 @@ bool set_up_network(CNetwork<double> &net, const string path_to_network)
 
 void step_relaxation(CNetwork<double> &net)
 {
-    int i; 
+    int i,j,neigh; 
 
     double x,y;
     
     z = complex<double>(0.0, 0.0);
     x = y = 0.0;
 
+    //Copy the state to avoid overwriting
+    vector<double> old_state = net.get_values();
+
     for (i=0; i < N; i++)
     {
-        net[i] += dt * (w[i] + q * r * sin(psi - net[i])) + sqdt * ran_g(gen) * s;
+        for (j=0; j < net.degree(i); j++)
+        {
+            neigh = net.get_in(i, j);
+            net[neigh] += dt * (w[neigh] + q * r * sin(psi - old_state[neigh])) + sqdt * ran_g(gen) * s;
+        }
 
 //        if (i==0) cout << net[i] << " "  << r << " " << psi << " " << w + q*r*sin(psi - net[i]) << endl;
         x += cos(net[i]);

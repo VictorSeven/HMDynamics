@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
     }
     else
     {
-        nargs = 3 + nlevels * 3;  //name + program + nlevel + (number+k+gamma in each level) + filename
+        nargs = 3 + nlevels * 3 + 1;  //name + program + nlevel + (number+k+gamma in each level) + filename
         if (nargs != argc)
         {
             cout << "Wrong number of arguments. Correct format:" << endl;
