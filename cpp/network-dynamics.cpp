@@ -57,8 +57,8 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-const double tf = 300.0;
-const double trelax = 150.0;
+const double tf = 100.0;
+const double trelax = 100.0;
 const double tmeasure = 1.0;
 
 const complex<double> I = complex<double>(0.0, 1.0);
@@ -131,6 +131,7 @@ int main(int argc, char* argv[])
 
         //Set up the network, including initial conditions
         correct_setup = set_up_network(net, networkname);
+
         if (!correct_setup) 
         {
             cout << "[HMDYNAMICS]: Network not loaded, execution aborted" << endl;
@@ -190,6 +191,8 @@ void step_relaxation(CNetwork<double> &net)
 {
     int i,j,neigh; 
 
+    double coupling;
+
     double x,y;
     
     z = complex<double>(0.0, 0.0);
@@ -200,11 +203,15 @@ void step_relaxation(CNetwork<double> &net)
 
     for (i=0; i < N; i++)
     {
+        coupling = 0.0;
         for (j=0; j < net.degree(i); j++)
         {
             neigh = net.get_in(i, j);
-            net[neigh] += dt * (w[neigh] + q * r * sin(psi - old_state[neigh])) + sqdt * ran_g(gen) * s;
+            coupling += sin(old_state[neigh] - old_state[i]);
         }
+
+        coupling *= q / net.degree(i);
+        net[i] += dt * (w[i] + coupling) + sqdt * ran_g(gen) * s;
 
 //        if (i==0) cout << net[i] << " "  << r << " " << psi << " " << w + q*r*sin(psi - net[i]) << endl;
         x += cos(net[i]);
@@ -219,16 +226,29 @@ void step_relaxation(CNetwork<double> &net)
 
 void step(CNetwork<double> &net)
 {
-    int i; 
+    int i,j,neigh; 
 
     double x,y;
     
+    double coupling;
+
     z = complex<double>(0.0, 0.0);
     x = y = 0.0;
 
+    //Copy the state to avoid overwriting
+    vector<double> old_state = net.get_values();
+
     for (i=0; i < N; i++)
     {
-        net[i] += dt * (w[i] + q * r * sin(psi - net[i])) + sqdt * ran_g(gen) * s;
+        coupling = 0.0;
+        for (j=0; j < net.degree(i); j++)
+        {
+            neigh = net.get_in(i, j);
+            coupling += sin(old_state[neigh] - old_state[i]);
+        }
+
+        coupling *= q / net.degree(i);
+        net[i] += dt * (w[i] + coupling) + sqdt * ran_g(gen) * s;
 
 //        if (i==0) cout << i << " " << net[i] << " " << r << " " << psi << endl;
         x += cos(net[i]);

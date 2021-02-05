@@ -27,6 +27,8 @@ void get_node_cumulative(const int neurons_cluster, const double beta, vector<do
 int get_random_node(const int cluster, const int neurons_cluster, const vector<double> &cumuweight);
 void hm_core(CNetwork<> &net, const int nlevels, const vector<int> &levels, const vector<double> &k_level, const vector<double> &gamma_level);
 
+void avoid_zero_degree(CNetwork<> &net, const int neurons_base_level);
+
 // --- Random number generation --- //
 mt19937 gen(85345385434);
 uniform_real_distribution<double> ran_u(0.0, 1.0);
@@ -203,6 +205,10 @@ void hm_random(CNetwork<> &net, const int nlevels, const vector<int> &levels, co
         }   
     }
 
+
+    //Avoid having non-connected nodes at the end
+    avoid_zero_degree(net, n_neurons_level[0]);
+
     //Record the used graph
     net.write_graphml(filename, vector<string>());
     net.write_mtx(filename);
@@ -328,7 +334,33 @@ void hm_core(CNetwork<> &net, const int nlevels, const vector<int> &levels, cons
         //Now we have connected the neurons inside this level, connect the clusters between them in next level!
     }
 
+    //Avoid having non-connected nodes at the end
+    avoid_zero_degree(net, n_neurons_level[0]);
+
     //Record the used graph
     net.write_graphml(filename, vector<string>());
     net.write_mtx(filename);
+}
+
+void avoid_zero_degree(CNetwork<> &net, const int neurons_base_level)
+{
+    int i,j;
+    int cluster_index;
+
+    //Check that all nodes have at least one link.
+    //If not, create a intra-cluster random link
+    for (i=0; i < N; i++)
+    {
+        if (net.degree(i) == 0)
+        {
+            cluster_index = i / neurons_base_level;
+            do 
+            {
+                j = floor(ran_u(gen) * neurons_base_level) + (cluster_index * neurons_base_level); 
+            }
+            while (i==j);
+
+            net.add_link(i,j);
+        }
+    }
 }
