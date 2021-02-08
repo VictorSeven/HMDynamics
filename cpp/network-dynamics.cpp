@@ -17,6 +17,10 @@
 #define MODE DIAGRAM
 #endif 
 
+#ifndef NUM_THREADS
+#define NUM_THREADS 1
+#endif
+
 //Include libraries
 #include <iostream>
 #include <cstdlib>
@@ -26,9 +30,11 @@
 #include <fstream>
 #include <random>
 #include <vector>
+#include <omp.h>
 #include "CNetwork/source/CNet.cpp" //Route local to this file. Find it on github.com/VictorSeven/CNetwork
 
 using namespace std;
+
 
 // --- Declare functions --- //
 bool set_up_network(CNetwork<double> &net, const string filename);
@@ -73,6 +79,10 @@ int main(int argc, char* argv[])
 {
     //Counters
     int i,j;
+
+    //Parallel code
+    omp_set_num_threads(NUM_THREADS);
+
 
     //Define the network and the path to it
     CNetwork<double> net(MAXNETSIZE);
@@ -201,6 +211,7 @@ void step_relaxation(CNetwork<double> &net)
     //Copy the state to avoid overwriting
     vector<double> old_state = net.get_values();
 
+    #pragma omp parallel for shared(old_state,net) reduction(+: x,y)
     for (i=0; i < N; i++)
     {
         coupling = 0.0;
@@ -213,7 +224,6 @@ void step_relaxation(CNetwork<double> &net)
         coupling *= q / net.degree(i);
         net[i] += dt * (w[i] + coupling) + sqdt * ran_g(gen) * s;
 
-//        if (i==0) cout << net[i] << " "  << r << " " << psi << " " << w + q*r*sin(psi - net[i]) << endl;
         x += cos(net[i]);
         y += sin(net[i]);
     }
@@ -238,6 +248,7 @@ void step(CNetwork<double> &net)
     //Copy the state to avoid overwriting
     vector<double> old_state = net.get_values();
 
+    #pragma omp parallel for shared(old_state,net) reduction(+: x,y)
     for (i=0; i < N; i++)
     {
         coupling = 0.0;
@@ -250,7 +261,6 @@ void step(CNetwork<double> &net)
         coupling *= q / net.degree(i);
         net[i] += dt * (w[i] + coupling) + sqdt * ran_g(gen) * s;
 
-//        if (i==0) cout << i << " " << net[i] << " " << r << " " << psi << endl;
         x += cos(net[i]);
         y += sin(net[i]);
     }
