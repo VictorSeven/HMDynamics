@@ -63,7 +63,7 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-const double tf = 100.0;
+const double tf = 10000.0;
 const double trelax = 100.0;
 const double tmeasure = 1.0;
 

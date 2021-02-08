@@ -13,23 +13,24 @@ if (len(sys.argv) < 2):
 
 # --- C++ compilation and preparation 
 
-is_proteus = False
+is_proteus = True 
 ncores=4
 
 #Set an adequate launch command depending on system
 if is_proteus:
     launch = "slanzarv --nomail -c={ncores} ".format(ncores=ncores)
+    datafolder = "../data/pd/"
 else:
     launch = "./"
+    datafolder = "../../data/pd/"
 
 #For compiling, also defining some important paths
 cppfolder = "../cpp/"
 cppfile = cppfolder + "network-dynamics.cpp"
 cppoutput = cppfolder + "bin/dynamics.exe"
 netfolder = "../networks/"
-datafolder = "../../data/pd/"
 
-gcc_flags = "-std=c++11 -O3 -fopenmp -DMODE=DIAGRAM -DNUM_THREADS={ncores}".format(ncores)
+gcc_flags = "-std=c++11 -O3 -fopenmp -DMODE=DIAGRAM -DNUM_THREADS={0}".format(ncores)
 
 #Ensure we have folders for the stuff
 system("mkdir {output_path}".format(output_path = cppfolder + "bin/"))
@@ -42,7 +43,7 @@ print("Compilation successful")
 
 # --- Run dynamics for each network 
 
-params = {"w0":1.0,  "delta":0.5,  "sigma":0.0,  "q":[0.0,2.0,10]}
+params = {"w0":1.0,  "delta":0.5,  "sigma":0.0,  "q":[0.0,2.0,100]}
 
 for network in sys.argv[1:]:
     netpath = netfolder + network

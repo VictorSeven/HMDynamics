@@ -44,7 +44,7 @@ CNetwork/
 #Ignore binaries and networks
 networks/
 cpp/bin/
-
+data/
 
 #Do not count proteus exe folder (just in case) and also ignore data
 .vscode/

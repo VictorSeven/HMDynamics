@@ -11,7 +11,7 @@ def list2str(lista):
 
 # --- C++ compilation and preparation 
 
-is_proteus = False
+is_proteus = True 
 
 #Set an adequate launch command depending on system
 if is_proteus:
@@ -42,7 +42,7 @@ print("Compilation successful")
 n,k = (1000, 10.0) #number of neurons and average degree
 netfile = netfolder + "erdos-renyi" #Where to save the result
 
-system("{launch}{exe} --random 1 {n} {k} {save}".format(exe=cppoutput, n=n, k=k, save=netfile))
+system("{launch}{exe} --random 1 {n} {k} {save}".format(launch=launch, exe=cppoutput, n=n, k=k, save=netfile))
 
 # - HM Random
 n = [100, 5, 3, 2]          #Number of elements in each module
