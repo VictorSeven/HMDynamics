@@ -11,6 +11,14 @@ def list2str(lista):
 
 # --- C++ compilation and preparation 
 
+is_proteus = False
+
+#Set an adequate launch command depending on system
+if is_proteus:
+    launch = "slanzarv --nomail "
+else:
+    launch = "./"
+
 #For compiling, also defining some important paths
 cppfolder = "../cpp/"
 cppfile = cppfolder + "create-network.cpp"
@@ -34,7 +42,7 @@ print("Compilation successful")
 n,k = (1000, 10.0) #number of neurons and average degree
 netfile = netfolder + "erdos-renyi" #Where to save the result
 
-system("./{exe} --random 1 {n} {k} {save}".format(exe=cppoutput, n=n, k=k, save=netfile))
+system("{launch}{exe} --random 1 {n} {k} {save}".format(exe=cppoutput, n=n, k=k, save=netfile))
 
 # - HM Random
 n = [100, 5, 3, 2]          #Number of elements in each module
@@ -45,7 +53,7 @@ n = list2str(n)
 k = list2str(k) 
 netfile = netfolder + "hmrandom-4levels"
 
-system("./{exe} --random 4 {n} {k} {save}".format(exe=cppoutput, n=" ".join(n), k=" ".join(k), save=netfile))
+system("{launch}{exe} --random 4 {n} {k} {save}".format(launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), save=netfile))
 
 print("HMRandom OK")
 
@@ -60,7 +68,7 @@ n = list2str(n)
 k = list2str(k) 
 netfile = netfolder + "hmrandom-binary-{d}depth".format(d=depth)
 
-system("./{exe} --random {nlv} {n} {k} {save}".format(nlv=depth+1, exe=cppoutput, n=" ".join(n), k=" ".join(k), save=netfile))
+system("{launch}{exe} --random {nlv} {n} {k} {save}".format(nlv=depth+1, launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), save=netfile))
 
 print("Binary HMRandom OK")
 
@@ -76,7 +84,7 @@ k = list2str(k)
 g = list2str(g)
 netfile = netfolder + "hmcore-4levels"
 
-system("./{exe} --core 4 {n} {k} {g} {save}".format(exe=cppoutput, n=" ".join(n), g=" ".join(g), k=" ".join(k), save=netfile))
+system("{launch}{exe} --core 4 {n} {k} {g} {save}".format(launch=launch, exe=cppoutput, n=" ".join(n), g=" ".join(g), k=" ".join(k), save=netfile))
 
 print("HMCore OK")
 
@@ -94,6 +102,6 @@ g = list2str(g)
 
 netfile = netfolder + "hmcore-binary-{d}depth".format(d=depth)
 
-system("./{exe} --core {nlv} {n} {k} {g} {save}".format(nlv=depth+1, exe=cppoutput, n=" ".join(n), k=" ".join(k), g=" ".join(g), save=netfile))
+system("{launch}{exe} --core {nlv} {n} {k} {g} {save}".format(nlv=depth+1, launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), g=" ".join(g), save=netfile))
 
 print("Binary HMRandom OK")
