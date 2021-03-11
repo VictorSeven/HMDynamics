@@ -96,13 +96,13 @@ int main(int argc, char* argv[])
 
     #if MODE==SINGLE
 
-        if (argc == 7)
+        if (argc == 9)
         {
-            w  = stod(argv[1]);
-            s  = stod(argv[2]);
-            q0 = stod(argv[3]);
-            qf = stod(argv[4]);
-            nq = stoi(argv[5]);
+            w0    = stod(argv[1]);
+            delta = stod(argv[2]);
+            s     = stod(argv[3]);
+            q     = stod(argv[4]);
+            networkname = string(argv[5]);
             filename = string(argv[6]); 
         }
 

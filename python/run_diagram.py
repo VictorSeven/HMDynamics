@@ -5,6 +5,11 @@ import numpy as np
 import sys
 import os
 
+# --- Get absolute path
+
+path_2_this = os.path.dirname(os.path.abspath(__file__))
+path_2_this = path_2_this if path_2_this != "" else "."
+
 # --- Check if we have a list of networks where we want to run, or if we want all
 
 if (len(sys.argv) < 2):
@@ -14,22 +19,22 @@ else:
 
 # --- C++ compilation and preparation 
 
-is_proteus = True 
-ncores=4
+is_proteus = False 
+ncores=1
 
 #Set an adequate launch command depending on system
 if is_proteus:
     launch = "slanzarv --nomail -c={ncores} ".format(ncores=ncores)
-    datafolder = "../data/pd/"
 else:
-    launch = "./"
-    datafolder = "../../data/pd/"
+    launch = " "
 
 #For compiling, also defining some important paths
-cppfolder = "../cpp/"
+datafolder = path_2_this + "/../data/pd/"
+cppfolder = path_2_this + "/../cpp/"
 cppfile = cppfolder + "network-dynamics.cpp"
 cppoutput = cppfolder + "bin/dynamics.exe"
-netfolder = "../networks/"
+netfolder = path_2_this + "/../networks/"
+#netfoldercpp = "/home/victor/Fisica/Research/Granada/HMDynamics/networks/hmrandom-4levels" 
 
 gcc_flags = "-std=c++11 -O3 -fopenmp -DMODE=DIAGRAM -DNUM_THREADS={0}".format(ncores)
 
@@ -54,6 +59,7 @@ else:
 
 for network in networks_files:
     if network.endswith(".mtx"):
+        network = network[:-4]
         netpath = netfolder + network
         outpath = datafolder + network
         os.system("{launch}{exe} {w0} {delta} {sigma} {q[0]} {q[1]} {q[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
