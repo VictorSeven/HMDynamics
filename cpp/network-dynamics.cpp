@@ -63,7 +63,7 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-const double tf = 10000.0;
+const double tf = 100000.0;
 const double trelax = 100.0;
 const double tmeasure = 1.0;
 
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
         }
 
         output.open(filename);
-        simulate_single(net, &output);
+        simulate_single(net, output);
         output.close();
     #elif MODE==DIAGRAM
         
@@ -315,7 +315,7 @@ void simulate_diagram(CNetwork<double> &net, const double q0, const double qf, c
     const double dq = (qf - q0) / (1.0 * nq);
     cout << dq << " " << filename << endl;
     output.open(filename);
-    for (q=q0; q <= qf; q += dq)
+    for (q=q0; q < qf; q += dq)
     {
         simulate_single(net, output);
     }

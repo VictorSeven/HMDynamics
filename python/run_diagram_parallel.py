@@ -36,7 +36,7 @@ cppfile = cppfolder + "network-dynamics.cpp"
 cppoutput = cppfolder + "bin/dynamics.exe"
 netfolder = path_2_this + "/../networks/"
 
-gcc_flags = "-std=c++11 -O3 -fopenmp -DMODE=SINGLE -DNUM_THREADS={0}".format(ncores)
+gcc_flags = "-std=c++11 -O3 -fopenmp -DMODE=DIAGRAM -DNUM_THREADS={0}".format(ncores)
 
 #Ensure we have folders for the stuff
 os.system("mkdir {output_path}".format(output_path = cppfolder + "bin/"))
@@ -49,7 +49,12 @@ print("Compilation successful")
 
 # --- Run dynamics for each network 
 
-qs = np.linspace(0.0, 2.0, 100)
+q0 = 0.0
+qf = 2.0
+npoints = 100
+points_per_file = 10
+n_simulations = npoints // points_per_file
+qspace = np.linspace(q0, qf, n_simulations)
 
 params = {"w0":1.0,  "delta":0.5,  "sigma":0.0}
 
@@ -63,7 +68,8 @@ for network in networks_files:
     if network.endswith(".mtx"):
         netpath = netfolder + network
         outpath = datafolder + network
-        for q in qs:
-            params["q"] = q
-            os.system("{launch}{exe} {w0} {delta} {sigma} {q} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+        for i in range(n_simulations-1):
+            params["q"] = [qspace[i], qspace[i+1], points_per_file] 
+            #os.system("{launch}{exe} {w0} {delta} {sigma} {q[0]} {q[1]} {q[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+            print("{launch}{exe} {w0} {delta} {sigma} {q[0]} {q[1]} {q[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
 
