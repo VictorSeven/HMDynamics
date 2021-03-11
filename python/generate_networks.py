@@ -51,7 +51,7 @@ k = [10.0, 5.0, 1.0, 0.5]    #Connectivity of each module
 #Convert lists to string
 n = list2str(n)  
 k = list2str(k) 
-netfile = netfolder + "hmrandom-4levels"
+netfile = netfolder + "r4"
 
 system("{launch}{exe} --random 4 {n} {k} {save}".format(launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), save=netfile))
 
@@ -66,7 +66,7 @@ k = [20] + [depth-j for j in range(depth)]
 #Convert lists to string
 n = list2str(n)  
 k = list2str(k) 
-netfile = netfolder + "hmrandom-binary-{d}depth".format(d=depth)
+netfile = netfolder + "rb{d}".format(d=depth)
 
 system("{launch}{exe} --random {nlv} {n} {k} {save}".format(nlv=depth+1, launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), save=netfile))
 
@@ -82,7 +82,7 @@ g = [0.0, 2.0, 2.0, 2.0]    #Scale free exponents
 n = list2str(n)  
 k = list2str(k) 
 g = list2str(g)
-netfile = netfolder + "hmcore-4levels"
+netfile = netfolder + "c4"
 
 system("{launch}{exe} --core 4 {n} {k} {g} {save}".format(launch=launch, exe=cppoutput, n=" ".join(n), g=" ".join(g), k=" ".join(k), save=netfile))
 
@@ -100,7 +100,7 @@ n = list2str(n)
 k = list2str(k) 
 g = list2str(g)
 
-netfile = netfolder + "hmcore-binary-{d}depth".format(d=depth)
+netfile = netfolder + "cb{d}".format(d=depth)
 
 system("{launch}{exe} --core {nlv} {n} {k} {g} {save}".format(nlv=depth+1, launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), g=" ".join(g), save=netfile))
 

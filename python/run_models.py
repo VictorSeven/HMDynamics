@@ -3,13 +3,14 @@
 # --- Header
 import numpy as np 
 import sys
-from os import system
+import os
 
-# --- Check we have a list of networks
+# --- Check if we have a list of networks where we want to run, or if we want all
 
 if (len(sys.argv) < 2):
-    print("Add the list of filenames you want to process. One filename per network")
-    exit()
+    use_all = True
+else:
+    use_all = False
 
 # --- C++ compilation and preparation 
 
@@ -33,11 +34,11 @@ netfolder = "../networks/"
 gcc_flags = "-std=c++11 -O3 -fopenmp -DMODE=DIAGRAM -DNUM_THREADS={0}".format(ncores)
 
 #Ensure we have folders for the stuff
-system("mkdir {output_path}".format(output_path = cppfolder + "bin/"))
-system("mkdir {output_path}".format(output_path = datafolder)) 
+os.system("mkdir {output_path}".format(output_path = cppfolder + "bin/"))
+os.system("mkdir {output_path}".format(output_path = datafolder)) 
 
-#Compile latest version of C++ network generator
-system("g++ {file} {flags} -o {out}".format(file=cppfile, flags=gcc_flags, out=cppoutput))
+#Compile latest version of C++ dynamics 
+os.system("g++ {file} {flags} -o {out}".format(file=cppfile, flags=gcc_flags, out=cppoutput))
 
 print("Compilation successful")
 
@@ -45,8 +46,15 @@ print("Compilation successful")
 
 params = {"w0":1.0,  "delta":0.5,  "sigma":0.0,  "q":[0.0,2.0,100]}
 
-for network in sys.argv[1:]:
-    netpath = netfolder + network
-    outpath = datafolder + network
-    system("{launch}{exe} {w0} {delta} {sigma} {q[0]} {q[1]} {q[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+#Get list of files
+if use_all:
+    networks_files = os.listdir(netfolder)
+else:
+    networks_files = sys.argv[1:]
+
+for network in networks_files:
+    if network.endswith(".mtx"):
+        netpath = netfolder + network
+        outpath = datafolder + network
+        os.system("{launch}{exe} {w0} {delta} {sigma} {q[0]} {q[1]} {q[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
 
