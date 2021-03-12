@@ -68,8 +68,8 @@ for network in networks_files:
     if network.endswith(".mtx"):
         network = network[:-4]
         netpath = netfolder + network
-        outpath = datafolder + network
         for i in range(n_simulations-1):
             params["q"] = [qspace[i], qspace[i+1], points_per_file] 
+            outpath = datafolder + network + "_part{0}".format(i)
             os.system("{launch}{exe} {w0} {delta} {sigma} {q[0]} {q[1]} {q[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
 
