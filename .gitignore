@@ -45,10 +45,11 @@ CNetwork/
 networks/
 cpp/bin/
 data/
+graphs/
 
 #Do not count proteus exe folder (just in case) and also ignore data
 .vscode/
 *.graphml
 *.mtx
 *.png
-
+.ipynb_*
