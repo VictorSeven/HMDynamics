@@ -5,21 +5,15 @@
 *  Implementation: Victor Buendía, 2021                     *
 * --------------------------------------------------------- */
 
-//TODO: no medir el promedio a cada paso temporal, tal vez cada 5 o 10. Asegurar el criterio de Nyquist
-//Usar desenrrollado de bucles para la funcion step
-
 #define MAXNETSIZE 10000
 
 #define SINGLE 0 
 #define DIAGRAM 1 
+#define TIMETRACE 2
 
 #ifndef MODE
-#define MODE DIAGRAM
+#define MODE TIMETRACE 
 #endif 
-
-#ifndef NUM_THREADS
-#define NUM_THREADS 1
-#endif
 
 //Include libraries
 #include <iostream>
@@ -30,7 +24,6 @@
 #include <fstream>
 #include <random>
 #include <vector>
-#include <omp.h>
 #include "CNetwork/source/CNet.cpp" //Route local to this file. Find it on github.com/VictorSeven/CNetwork
 
 using namespace std;
@@ -39,11 +32,11 @@ using namespace std;
 // --- Declare functions --- //
 bool set_up_network(CNetwork<double> &net, const string filename);
 
-void step_relaxation(CNetwork<double> &net);
 void step(CNetwork<double> &net);
 
 void simulate_single(CNetwork<double> &net, ofstream &output);
 void simulate_diagram(CNetwork<double> &net, const double q0, const double qf, const int nq, ofstream &output);
+void time_traces(CNetwork<double> &net, ofstream &output);
 
 // --- Random number generation --- //
 mt19937 gen(85345385434);
@@ -63,8 +56,8 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-const double tf = 100000.0;
-const double trelax = 100.0;
+double tf = 100000.0;
+double trelax = 100.0;
 const double tmeasure = 1.0;
 
 const complex<double> I = complex<double>(0.0, 1.0);
@@ -79,10 +72,6 @@ int main(int argc, char* argv[])
 {
     //Counters
     int i,j;
-
-    //Parallel code
-    omp_set_num_threads(NUM_THREADS);
-
 
     //Define the network and the path to it
     CNetwork<double> net(MAXNETSIZE);
@@ -149,6 +138,35 @@ int main(int argc, char* argv[])
         }
         
         simulate_diagram(net, q0, qf, nq, output);
+    #elif MODE==TIMETRACE
+
+        if (argc == 8)
+        {
+            w0    = stod(argv[1]);
+            delta = stod(argv[2]);
+            s     = stod(argv[3]);
+            trelax= stod(argv[4]);
+            tf    = stod(argv[5]);
+            networkname = string(argv[6]);
+            filename = string(argv[7]); 
+        }
+        else
+        {
+            cout << "[HMDYNAMICS]: incorrect number of arguments" << endl;
+            return EXIT_SUCCESS;        
+        }
+
+        //Set up the network, including initial conditions
+        correct_setup = set_up_network(net, networkname);
+
+        if (!correct_setup) 
+        {
+            cout << "[HMDYNAMICS]: Network not loaded, execution aborted" << endl;
+            return EXIT_SUCCESS;
+        }
+
+        time_traces(net, output);
+        
     #endif
     return EXIT_SUCCESS;
 }
@@ -196,44 +214,6 @@ bool set_up_network(CNetwork<double> &net, const string path_to_network)
     return true;
 }
 
-
-void step_relaxation(CNetwork<double> &net)
-{
-    int i,j,neigh; 
-
-    double coupling;
-
-    double x,y;
-    
-    z = complex<double>(0.0, 0.0);
-    x = y = 0.0;
-
-    //Copy the state to avoid overwriting
-    vector<double> old_state = net.get_values();
-
-    #pragma omp parallel for shared(old_state,net) reduction(+: x,y)
-    for (i=0; i < N; i++)
-    {
-        coupling = 0.0;
-        for (j=0; j < net.degree(i); j++)
-        {
-            neigh = net.get_in(i, j);
-            coupling += sin(old_state[neigh] - old_state[i]);
-        }
-
-        coupling *= q / net.degree(i);
-        net[i] += dt * (w[i] + coupling) + sqdt * ran_g(gen) * s;
-
-        x += cos(net[i]);
-        y += sin(net[i]);
-    }
-
-    z = complex<double>(x,y) / (1.0*N);
-    r = abs(z);
-    psi = arg(z);
-}
-
-
 void step(CNetwork<double> &net)
 {
     int i,j,neigh; 
@@ -248,7 +228,6 @@ void step(CNetwork<double> &net)
     //Copy the state to avoid overwriting
     vector<double> old_state = net.get_values();
 
-    #pragma omp parallel for shared(old_state,net) reduction(+: x,y)
     for (i=0; i < N; i++)
     {
         coupling = 0.0;
@@ -283,8 +262,9 @@ void simulate_single(CNetwork<double> &net, ofstream &output)
     //Variables to make averages
     double av_r  = 0.0;    
     double av_r2 = 0.0;
+
     //Then make simulations. First relaxation, then measurement.
-    for (t = 0.0; t <= trelax; t += dt) step_relaxation(net);
+    for (t = 0.0; t <= trelax; t += dt) step(net);
 
     t = 0.0;
     while(t < tf)
@@ -292,7 +272,7 @@ void simulate_single(CNetwork<double> &net, ofstream &output)
         //Allow a bit of time between measures
         for (i = 0; i < measure_its - 1; i++)
         {
-            step_relaxation(net);
+            step(net);
             t += dt;
         }
 
@@ -318,6 +298,26 @@ void simulate_diagram(CNetwork<double> &net, const double q0, const double qf, c
     for (q=q0; q < qf; q += dq)
     {
         simulate_single(net, output);
+    }
+    output.close();
+}
+
+void time_traces(CNetwork<double> &net, ofstream &output)
+{
+    int i;
+    double t;
+
+    //First relaxation, then measurement.
+    for (t = 0.0; t < trelax; t += dt) step(net);
+
+    //For a small time, just get a sneek peek of what's going on in the system
+    output.open(filename);
+    output << "#dt = " << dt << ", tf = " << tf << endl;
+    for (t = 0.0; t < tf; t += dt)
+    {
+        step(net);
+        for (i=0; i < N; i++) output << net[i] << " ";
+        output << endl;
     }
     output.close();
 }
