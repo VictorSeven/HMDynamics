@@ -35,8 +35,8 @@ bool set_up_network(CNetwork<double> &net, const string filename);
 void step(CNetwork<double> &net);
 
 void simulate_single(CNetwork<double> &net, ofstream &output);
-void simulate_diagram(CNetwork<double> &net, const double q0, const double qf, const int nq, ofstream &output);
-void time_traces(CNetwork<double> &net, ofstream &output);
+void simulate_diagram(CNetwork<double> &net, const double s0, const double sf, const int ns, ofstream &output);
+void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, const double duration);
 
 // --- Random number generation --- //
 mt19937 gen(85345385434);
@@ -48,7 +48,7 @@ cauchy_distribution<double> lorentzian(0.0, 1.0);
 int N;
 
 vector<double> w;
-double w0,delta,q,s;
+double w0,delta,q,a,s;
 string networkname = "hmrandom";
 string filename = "kuramoto";
 
@@ -56,7 +56,7 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 100000.0;
+double tf = 1000.0;
 double trelax = 100.0;
 const double tmeasure = 1.0;
 
@@ -85,14 +85,15 @@ int main(int argc, char* argv[])
 
     #if MODE==SINGLE
 
-        if (argc == 9)
+        if (argc == 8)
         {
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
             s     = stod(argv[3]);
-            q     = stod(argv[4]);
-            networkname = string(argv[5]);
-            filename = string(argv[6]); 
+            a     = stod(argv[4]);
+            q     = stod(argv[5]);
+            networkname = string(argv[6]);
+            filename = string(argv[7]); 
         }
 
         //Set up the network, including initial conditions
@@ -108,19 +109,20 @@ int main(int argc, char* argv[])
         output.close();
     #elif MODE==DIAGRAM
         
-        double q0, qf;
-        int nq;
+        double s0, sf;
+        int ns;
 
-        if (argc == 9)
+        if (argc == 10)
         {
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
-            s     = stod(argv[3]);
-            q0    = stod(argv[4]);
-            qf    = stod(argv[5]);
-            nq    = stoi(argv[6]);
-            networkname = string(argv[7]);
-            filename = string(argv[8]); 
+            a     = stod(argv[3]);
+            q     = stod(argv[4]);
+            s0    = stod(argv[5]);
+            sf    = stod(argv[6]);
+            ns    = stoi(argv[7]);
+            networkname = string(argv[8]);
+            filename = string(argv[9]); 
         }
         else
         {
@@ -137,18 +139,22 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
         
-        simulate_diagram(net, q0, qf, nq, output);
+        simulate_diagram(net, s0, sf, ns, output);
     #elif MODE==TIMETRACE
+        int ntraces, trace_duration;
 
-        if (argc == 8)
+        if (argc == 11)
         {
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
             s     = stod(argv[3]);
-            trelax= stod(argv[4]);
-            tf    = stod(argv[5]);
-            networkname = string(argv[6]);
-            filename = string(argv[7]); 
+            a     = stod(argv[4]);
+            q     = stod(argv[5]);
+            ntraces = stoi(argv[6]);
+            trace_duration = stod(argv[7]);
+            tf    = stod(argv[8]);
+            networkname = string(argv[9]);
+            filename = string(argv[10]); 
         }
         else
         {
@@ -165,7 +171,7 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
 
-        time_traces(net, output);
+        time_traces(net, output, ntraces, trace_duration);
         
     #endif
     return EXIT_SUCCESS;
@@ -238,7 +244,7 @@ void step(CNetwork<double> &net)
         }
 
         coupling *= q / net.degree(i);
-        net[i] += dt * (w[i] + coupling) + sqdt * ran_g(gen) * s;
+        net[i] += dt * (w[i] + a*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
 
         x += cos(net[i]);
         y += sin(net[i]);
@@ -290,34 +296,39 @@ void simulate_single(CNetwork<double> &net, ofstream &output)
     return;
 }
 
-void simulate_diagram(CNetwork<double> &net, const double q0, const double qf, const int nq, ofstream &output)
+void simulate_diagram(CNetwork<double> &net, const double s0, const double sf, const int ns, ofstream &output)
 {
-    const double dq = (qf - q0) / (1.0 * nq);
-    cout << dq << " " << filename << endl;
+    const double ds = (sf - s0) / (1.0 * ns);
+    cout << ds << " " << filename << endl;
     output.open(filename);
-    for (q=q0; q < qf; q += dq)
+    for (s=s0; s < sf; s += ds)
     {
         simulate_single(net, output);
     }
     output.close();
 }
 
-void time_traces(CNetwork<double> &net, ofstream &output)
+void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, const double duration)
 {
-    int i;
+    int i,trace;
     double t;
 
     //First relaxation, then measurement.
     for (t = 0.0; t < trelax; t += dt) step(net);
 
-    //For a small time, just get a sneek peek of what's going on in the system
-    output.open(filename);
-    output << "#dt = " << dt << ", tf = " << tf << endl;
-    for (t = 0.0; t < tf; t += dt)
+    for (trace=0; trace < ntraces; trace++)
     {
-        step(net);
-        for (i=0; i < N; i++) output << net[i] << " ";
-        output << endl;
-    }
-    output.close();
+        //Write to file part of the system evolution
+        output.open(filename + "_trace" + to_string(trace));
+        for (t = 0.0; t < duration; t += dt)
+        {
+            step(net);
+            for (i=0; i < N; i++) output << net[i] << " ";
+            output << endl;
+        }
+        output.close();
+
+        //Wait a bit between traces
+        for (t = 0.0; t < tf; t += dt) step(net);
+    } 
 }

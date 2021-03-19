@@ -28,13 +28,13 @@ else:
     launch = " "
 
 #For compiling, also defining some important paths
-datafolder = path_2_this + "/../data/pd/"
+datafolder = path_2_this + "/../data/timetrace/"
 cppfolder = path_2_this + "/../cpp/"
 cppfile = cppfolder + "network-dynamics.cpp"
-cppoutput = cppfolder + "bin/dynamics.exe"
+cppoutput = cppfolder + "bin/timetrace.exe"
 netfolder = path_2_this + "/../networks/"
 
-gcc_flags = "-std=c++11 -O3 -DMODE=DIAGRAM" 
+gcc_flags = "-std=c++11 -O3 -DMODE=TIMETRACE"
 
 #Ensure we have folders for the stuff
 os.system("mkdir {output_path}".format(output_path = cppfolder + "bin/"))
@@ -47,7 +47,7 @@ print("Compilation successful")
 
 # --- Run dynamics for each network 
 
-params = {"w0":1.0, "a":0.0, "delta":0.0,  "q":1.0,  "s":[0.0,2.0,100]}
+params = {"w0":1.0, "a":0.5,  "delta":0.5,  "s":0.0, "q":1.0, "ntraces":10, "duration":1.0, "wait_time":1.0}
 
 #Get list of files
 if use_all:
@@ -56,9 +56,10 @@ else:
     networks_files = sys.argv[1:]
 
 for network in networks_files:
+    print(network)
     if network.endswith(".mtx"):
         network = network[:-4]
         netpath = netfolder + network
         outpath = datafolder + network
-        os.system("{launch}{exe} {w0} {delta} {a} {q} {s[0]} {s[1]} {s[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+        os.system("{launch}{exe} {w0} {delta} {s} {a} {q} {ntraces} {duration} {wait_time} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
 
