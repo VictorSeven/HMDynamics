@@ -45,9 +45,7 @@ os.system("g++ {file} {flags} -o {out}".format(file=cppfile, flags=gcc_flags, ou
 
 print("Compilation successful")
 
-# --- Run dynamics for each network 
-
-params = {"w0":1.0, "a":0.0, "delta":0.0,  "q":1.0,  "s":[0.0,2.0,100]}
+# --- Prepare functions to launch all the programs
 
 #Get list of files
 if use_all:
@@ -55,10 +53,22 @@ if use_all:
 else:
     networks_files = sys.argv[1:]
 
-for network in networks_files:
-    if network.endswith(".mtx"):
-        network = network[:-4]
-        netpath = netfolder + network
-        outpath = datafolder + network
-        os.system("{launch}{exe} {w0} {delta} {a} {q} {s[0]} {s[1]} {s[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+def launch_runs(params):
+    for network in networks_files:
+        if network.endswith(".mtx"):
+            network = network[:-4]
+            netpath = netfolder + network
+            outpath = datafolder + network
+            os.system("{launch}{exe} {w0} {delta} {q} {variable_a} {fixed} {var[0]} {var[1]} {var[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+
+
+# --- Run dynamics for each network 
+
+#Fixed = a
+params = {"w0":1.0, "fixed":0.0, "delta":0.0,  "q":1.0,  "var":[0.0,2.0,100], "variable_a": 0}
+launch_runs(params)
+
+#Fixed = s
+params = {"w0":1.0, "fixed":0.0, "delta":0.0,  "q":1.0,  "var":[0.0,2.0,100], "variable_a": 1}
+launch_runs(params)
 

@@ -12,7 +12,7 @@
 #define TIMETRACE 2
 
 #ifndef MODE
-#define MODE TIMETRACE 
+#define MODE DIAGRAM 
 #endif 
 
 //Include libraries
@@ -36,6 +36,7 @@ void step(CNetwork<double> &net);
 
 void simulate_single(CNetwork<double> &net, ofstream &output);
 void simulate_diagram(CNetwork<double> &net, const double s0, const double sf, const int ns, ofstream &output);
+void simulate_diagram(CNetwork<double> &net, double &selected_var, const double var0, const double varf, const int nvar, ofstream &output);
 void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, const double duration);
 
 // --- Random number generation --- //
@@ -110,19 +111,33 @@ int main(int argc, char* argv[])
     #elif MODE==DIAGRAM
         
         double s0, sf;
-        int ns;
+        double a0, af;
+        int ns, na;
+        bool variable_a;
 
-        if (argc == 10)
+        if (argc == 11)
         {
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
-            a     = stod(argv[3]);
-            q     = stod(argv[4]);
-            s0    = stod(argv[5]);
-            sf    = stod(argv[6]);
-            ns    = stoi(argv[7]);
-            networkname = string(argv[8]);
-            filename = string(argv[9]); 
+            q     = stod(argv[3]);
+            variable_a = stoi(argv[4]);
+            if (!variable_a)
+            {
+                a     = stod(argv[5]);
+                s0    = stod(argv[6]);
+                sf    = stod(argv[7]);
+                ns    = stoi(argv[8]);
+            }
+            else 
+            {
+                s     = stod(argv[5]);
+                cout << s << endl;
+                a0    = stod(argv[6]);
+                af    = stod(argv[7]);
+                na    = stoi(argv[8]);
+            }
+            networkname = string(argv[9]);
+            filename = string(argv[10]); 
         }
         else
         {
@@ -139,7 +154,9 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
         
-        simulate_diagram(net, s0, sf, ns, output);
+        if (variable_a) simulate_diagram(net, a, a0, af, na, output);
+        else simulate_diagram(net, s, s0, sf, ns, output);
+//        simulate_diagram(net, s0, sf, ns, output);
     #elif MODE==TIMETRACE
         int ntraces, trace_duration;
 
@@ -259,6 +276,7 @@ void step(CNetwork<double> &net)
 
 void simulate_single(CNetwork<double> &net, ofstream &output)
 {
+    cout << a << " " << s << endl;
     const int measure_its = tmeasure / dt;   //Number of iterations to do between measurements
     const int nmeasures = tf / tmeasure;     //Number of measures we did
     double t;
@@ -302,6 +320,17 @@ void simulate_diagram(CNetwork<double> &net, const double s0, const double sf, c
     cout << ds << " " << filename << endl;
     output.open(filename);
     for (s=s0; s < sf; s += ds)
+    {
+        simulate_single(net, output);
+    }
+    output.close();
+}
+
+void simulate_diagram(CNetwork<double> &net, double &selected_var, const double var0, const double varf, const int nvar, ofstream &output)
+{
+    const double dvar = (varf - var0) / (1.0 * nvar);
+    output.open(filename);
+    for (selected_var=var0; selected_var < varf; selected_var += dvar)
     {
         simulate_single(net, output);
     }
