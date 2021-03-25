@@ -23,7 +23,7 @@ is_proteus = False
 
 #Set an adequate launch command depending on system
 if is_proteus:
-    launch = "slanzarv --nomail -c={ncores} ".format(ncores=ncores)
+    launch = "slanzarv --nomail "
 else:
     launch = " "
 
@@ -53,22 +53,28 @@ if use_all:
 else:
     networks_files = sys.argv[1:]
 
-def launch_runs(params):
+def launch_runs(params, extension):
     for network in networks_files:
         if network.endswith(".mtx"):
             network = network[:-4]
             netpath = netfolder + network
-            outpath = datafolder + network
+            outpath = datafolder + network + extension
             os.system("{launch}{exe} {w0} {delta} {q} {variable_a} {fixed} {var[0]} {var[1]} {var[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
 
 
 # --- Run dynamics for each network 
 
 #Fixed = a
-params = {"w0":1.0, "fixed":0.0, "delta":0.0,  "q":1.0,  "var":[0.0,2.0,100], "variable_a": 0}
-launch_runs(params)
+a_list = [0.0, 0.5]
+filenames = ["_kuramoto", "_exc_hopf"]
+for a,outname in zip(a_list, filenames):
+    params = {"w0":1.0, "variable_a": 0, "fixed":a, "delta":0.0,  "q":1.0,  "var":[0.5,1.5,100]}
+    launch_runs(params, outname)
 
 #Fixed = s
-params = {"w0":1.0, "fixed":0.0, "delta":0.0,  "q":1.0,  "var":[0.0,2.0,100], "variable_a": 1}
-launch_runs(params)
+s_list = [0.0, 0.5]
+filenames = ["_noiseless", "_hybrid"]
+for s,outname in zip(a_list, filenames):
+    params = {"w0":1.0, "variable_a": 1, "fixed":s, "delta":0.0,  "q":1.0,  "var":[0.5,1.5,100]}
+    launch_runs(params, outname)
 

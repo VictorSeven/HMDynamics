@@ -61,7 +61,9 @@ print("HMRandom OK")
 depth = 7
 
 n = [30] + [2 for j in range(depth)]
-k = [20] + [depth-j for j in range(depth)]
+k0, kf = 5, 0.1
+dk = (kf - k0) / depth
+k = [12] + [k0 + dk*j for j in range(depth)]
 
 #Convert lists to string
 n = list2str(n)  
@@ -92,7 +94,9 @@ print("HMCore OK")
 depth = 7
 
 n = [30] + [2 for j in range(depth)]
-k = [15] + [depth-j for j in range(depth)]
+k0, kf = 5, 0.1
+dk = (kf - k0) / depth
+k = [12] + [k0 + dk*j for j in range(depth)]
 g = [0] + [2 for j in range(depth)]
 
 #Convert lists to string

@@ -20,11 +20,10 @@ else:
 # --- C++ compilation and preparation 
 
 is_proteus = True 
-ncores=1
 
 #Set an adequate launch command depending on system
 if is_proteus:
-    launch = "slanzarv --nomail -c={ncores} ".format(ncores=ncores)
+    launch = "slanzarv --nomail ".format(ncores=ncores)
     datafolder = "../data/pd/"
 else:
     launch = "./"
@@ -47,16 +46,7 @@ os.system("g++ {file} {flags} -o {out}".format(file=cppfile, flags=gcc_flags, ou
 
 print("Compilation successful")
 
-# --- Run dynamics for each network 
-
-q0 = 0.0
-qf = 2.0
-npoints = 100
-points_per_file = 10
-n_simulations = npoints // points_per_file
-qspace = np.linspace(q0, qf, n_simulations)
-
-params = {"w0":1.0,  "delta":0.5,  "sigma":0.0}
+# --- Prepare functions to launch all the programs
 
 #Get list of files
 if use_all:
@@ -64,12 +54,32 @@ if use_all:
 else:
     networks_files = sys.argv[1:]
 
-for network in networks_files:
-    if network.endswith(".mtx"):
-        network = network[:-4]
-        netpath = netfolder + network
-        for i in range(n_simulations-1):
-            params["q"] = [qspace[i], qspace[i+1], points_per_file] 
-            outpath = datafolder + network + "_part{0}".format(i)
-            os.system("{launch}{exe} {w0} {delta} {sigma} {q[0]} {q[1]} {q[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+def launch_runs(params, extension, var_space, points_per_file=10):
+    var0, varf, npoints = var_space 
+    n_simulations = npoints // points_per_file
+    var = np.linspace(var0, varf, n_simulations)
+    for network in networks_files:
+        if network.endswith(".mtx"):
+            network = network[:-4]
+            netpath = netfolder + network
+            for i in range(n_simulations-1):
+                params["var"] = [var[i], var[i+1], points_per_file] 
+                outpath = datafolder + network + extension + "_part{0}".format(i)
+                os.system("{launch}{exe} {w0} {delta} {q} {variable_a} {fixed} {var[0]} {var[1]} {var[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
 
+
+# --- Run dynamics for each network 
+
+#Fixed = a
+a_list = [0.0, 0.5]
+filenames = ["_kuramoto", "_exc_hopf"]
+for a,outname in zip(a_list, filenames):
+    params = {"w0":1.0, "variable_a": 0, "fixed":a, "delta":0.0,  "q":1.0,  "var":[0.5,1.5,100]}
+    launch_runs(params, outname, [0.5,1.5,100])
+
+#Fixed = s
+s_list = [0.0, 0.5]
+filenames = ["_noiseless", "_hybrid"]
+for s,outname in zip(a_list, filenames):
+    params = {"w0":1.0, "variable_a": 1, "fixed":s, "delta":0.0,  "q":1.0,  "var":[0.5,1.5,100]}
+    launch_runs(params, outname, [0.5,1.5,100])

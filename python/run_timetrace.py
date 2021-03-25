@@ -45,9 +45,7 @@ os.system("g++ {file} {flags} -o {out}".format(file=cppfile, flags=gcc_flags, ou
 
 print("Compilation successful")
 
-# --- Run dynamics for each network 
-
-params = {"w0":1.0, "a":0.5,  "delta":0.5,  "s":0.0, "q":1.0, "ntraces":10, "duration":1.0, "wait_time":1.0}
+# --- Prepare functions to launch all the programs
 
 #Get list of files
 if use_all:
@@ -55,11 +53,22 @@ if use_all:
 else:
     networks_files = sys.argv[1:]
 
-for network in networks_files:
-    print(network)
+def launch_runs(params, extension):
     if network.endswith(".mtx"):
         network = network[:-4]
         netpath = netfolder + network
         outpath = datafolder + network
         os.system("{launch}{exe} {w0} {delta} {s} {a} {q} {ntraces} {duration} {wait_time} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+
+# --- Run dynamics for each network 
+
+a_list = [0.0, 0.0, 0.0, 0.5, 0.5, 0.5, 0.9, 1.1, 1.07, 0.9, 1.1, 1.0]
+s_list = [0.8, 1.0, 1.2, 0.8, 0.9, 1.0, 0.5, 0.5, 0.5, 0.1, 0.1, 0.1]
+name_list = ["hopf_sub", "hopf_crit", "hopf_super", "hopf_exc_sub", "hopf_exc_crit", "hopf_exc_super", "hyb_sub", "hyb_crit", "hyb_super", "snic_sub", "snic_crit", "snic_super"]
+
+for a,s,name in zip(a_list, s_list, name_list):
+    params = {"w0":1.0, "a":a,  "delta":0.0,  "s":s, "q":1.0, "ntraces":10, "duration":1.0, "wait_time":1.0}
+    launch_runs(params, name)
+
+
 
