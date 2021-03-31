@@ -19,15 +19,7 @@ else:
 
 # --- C++ compilation and preparation 
 
-is_proteus = True 
-
-#Set an adequate launch command depending on system
-if is_proteus:
-    launch = "slanzarv --nomail ".format(ncores=ncores)
-    datafolder = "../data/pd/"
-else:
-    launch = "./"
-    datafolder = path_2_this + "/../data/pd/"
+datafolder = path_2_this + "/../data/pd/"
 
 #For compiling, also defining some important paths
 cppfolder = path_2_this + "/../cpp/"
@@ -35,7 +27,7 @@ cppfile = cppfolder + "network-dynamics.cpp"
 cppoutput = cppfolder + "bin/dynamics.exe"
 netfolder = path_2_this + "/../networks/"
 
-gcc_flags = "-std=c++11 -O3 -fopenmp -DMODE=DIAGRAM -DNUM_THREADS={0}".format(ncores)
+gcc_flags = "-std=c++11 -O3 -DMODE=DIAGRAM "
 
 #Ensure we have folders for the stuff
 os.system("mkdir {output_path}".format(output_path = cppfolder + "bin/"))
@@ -65,7 +57,7 @@ def launch_runs(params, extension, var_space, points_per_file=10):
             for i in range(n_simulations-1):
                 params["var"] = [var[i], var[i+1], points_per_file] 
                 outpath = datafolder + network + extension + "_part{0}".format(i)
-                os.system("{launch}{exe} {w0} {delta} {q} {variable_a} {fixed} {var[0]} {var[1]} {var[2]} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+                os.system("slanzarv --nomail -J {procname} {exe} {w0} {delta} {q} {variable_a} {fixed} {var[0]} {var[1]} {var[2]} {netpath} {outpath}".format(**params, procname="diagram_"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
 
 
 # --- Run dynamics for each network 

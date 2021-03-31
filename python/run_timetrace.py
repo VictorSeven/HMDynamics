@@ -19,14 +19,6 @@ else:
 
 # --- C++ compilation and preparation 
 
-is_proteus = False 
-
-#Set an adequate launch command depending on system
-if is_proteus:
-    launch = "slanzarv --nomail -c={ncores} ".format(ncores=ncores)
-else:
-    launch = " "
-
 #For compiling, also defining some important paths
 datafolder = path_2_this + "/../data/timetrace/"
 cppfolder = path_2_this + "/../cpp/"
@@ -54,11 +46,12 @@ else:
     networks_files = sys.argv[1:]
 
 def launch_runs(params, extension):
-    if network.endswith(".mtx"):
-        network = network[:-4]
-        netpath = netfolder + network
-        outpath = datafolder + network
-        os.system("{launch}{exe} {w0} {delta} {s} {a} {q} {ntraces} {duration} {wait_time} {netpath} {outpath}".format(**params, launch=launch, exe=cppoutput, netpath=netpath, outpath=outpath))
+    for network in networks_files:
+        if network.endswith(".mtx"):
+            network = network[:-4]
+            netpath = netfolder + network
+            outpath = datafolder + network
+            os.system("slanzarv --nomail -J {procname} {exe} {w0} {delta} {s} {a} {q} {ntraces} {duration} {wait_time} {netpath} {outpath}".format(**params, procname="trace_"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
 
 # --- Run dynamics for each network 
 
