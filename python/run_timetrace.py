@@ -60,7 +60,7 @@ s_list = [0.8, 1.0, 1.2, 0.8, 0.9, 1.0, 0.5, 0.5, 0.5, 0.1, 0.1, 0.1]
 name_list = ["hopf_sub", "hopf_crit", "hopf_super", "hopf_exc_sub", "hopf_exc_crit", "hopf_exc_super", "hyb_sub", "hyb_crit", "hyb_super", "snic_sub", "snic_crit", "snic_super"]
 
 for a,s,name in zip(a_list, s_list, name_list):
-    params = {"w0":1.0, "a":a,  "delta":0.0,  "s":s, "q":1.0, "ntraces":10, "duration":1.0, "wait_time":1.0}
+    params = {"w0":1.0, "a":a,  "delta":0.0,  "s":s, "q":1.0, "ntraces":1, "duration":10.0, "wait_time":1.0}
     launch_runs(params, name)
 
 

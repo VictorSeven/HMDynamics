@@ -56,7 +56,7 @@ def launch_runs(params, extension, var_space, points_per_file=10):
             netpath = netfolder + network
             for i in range(n_simulations-1):
                 params["var"] = [var[i], var[i+1], points_per_file] 
-                outpath = datafolder + network + extension + "_part{0}".format(i)
+                outpath = datafolder + network + '-' + extension + "_part{0}".format(i)
                 os.system("slanzarv --nomail -J {procname} {exe} {w0} {delta} {q} {variable_a} {fixed} {var[0]} {var[1]} {var[2]} {netpath} {outpath}".format(**params, procname="diagram_"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
 
 
