@@ -50,7 +50,7 @@ def launch_runs(params, extension):
         if network.endswith(".mtx"):
             network = network[:-4]
             netpath = netfolder + network
-            outpath = datafolder + network
+            outpath = datafolder + network + '-' + extension
             os.system("slanzarv --nomail -J {procname} {exe} {w0} {delta} {s} {a} {q} {ntraces} {duration} {wait_time} {netpath} {outpath}".format(**params, procname="trace_"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
 
 # --- Run dynamics for each network 

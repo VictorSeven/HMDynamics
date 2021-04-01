@@ -34,7 +34,7 @@ bool set_up_network(CNetwork<double> &net, const string filename);
 
 void step(CNetwork<double> &net);
 
-void simulate_single(CNetwork<double> &net, ofstream &output);
+void simulate_single(CNetwork<double> &net, ofstream &output, const double control);
 void simulate_diagram(CNetwork<double> &net, const double s0, const double sf, const int ns, ofstream &output);
 void simulate_diagram(CNetwork<double> &net, double &selected_var, const double var0, const double varf, const int nvar, ofstream &output);
 void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, const double duration);
@@ -59,7 +59,7 @@ const double sqdt = sqrt(dt);
 
 double tf = 1000.0;
 double trelax = 100.0;
-const double tmeasure = 1.0;
+const double tmeasure = 10.0;
 
 const complex<double> I = complex<double>(0.0, 1.0);
 
@@ -274,7 +274,7 @@ void step(CNetwork<double> &net)
 
 // --- Functions for phase diagrams and so on
 
-void simulate_single(CNetwork<double> &net, ofstream &output)
+void simulate_single(CNetwork<double> &net, ofstream &output, const double control)
 {
     cout << a << " " << s << endl;
     const int measure_its = tmeasure / dt;   //Number of iterations to do between measurements
@@ -309,7 +309,7 @@ void simulate_single(CNetwork<double> &net, ofstream &output)
 
     av_r /= 1.0 * nmeasures;
     av_r2 /= 1.0 * nmeasures;
-    output << q << " " << av_r << " " << av_r2 - av_r*av_r << endl;
+    output << control << " " << av_r << " " << av_r2 - av_r*av_r << endl;
     
     return;
 }
@@ -317,11 +317,10 @@ void simulate_single(CNetwork<double> &net, ofstream &output)
 void simulate_diagram(CNetwork<double> &net, const double s0, const double sf, const int ns, ofstream &output)
 {
     const double ds = (sf - s0) / (1.0 * ns);
-    cout << ds << " " << filename << endl;
     output.open(filename);
     for (s=s0; s < sf; s += ds)
     {
-        simulate_single(net, output);
+        simulate_single(net, output, s);
     }
     output.close();
 }
@@ -332,7 +331,7 @@ void simulate_diagram(CNetwork<double> &net, double &selected_var, const double 
     output.open(filename);
     for (selected_var=var0; selected_var < varf; selected_var += dvar)
     {
-        simulate_single(net, output);
+        simulate_single(net, output, selected_var);
     }
     output.close();
 }
@@ -348,7 +347,7 @@ void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, con
     for (trace=0; trace < ntraces; trace++)
     {
         //Write to file part of the system evolution
-        output.open(filename + "_trace" + to_string(trace));
+        output.open(filename + "-trace" + to_string(trace));
         for (t = 0.0; t < duration; t += dt)
         {
             step(net);

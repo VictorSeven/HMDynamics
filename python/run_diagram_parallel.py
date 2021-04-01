@@ -64,14 +64,14 @@ def launch_runs(params, extension, var_space, points_per_file=10):
 
 #Fixed = a
 a_list = [0.0, 0.5]
-filenames = ["_kuramoto", "_exc_hopf"]
+filenames = ["-kuramoto", "-exc_hopf"]
 for a,outname in zip(a_list, filenames):
     params = {"w0":1.0, "variable_a": 0, "fixed":a, "delta":0.0,  "q":1.0,  "var":[0.5,1.5,100]}
     launch_runs(params, outname, [0.5,1.5,100])
 
 #Fixed = s
 s_list = [0.0, 0.5]
-filenames = ["_noiseless", "_hybrid"]
+filenames = ["-noiseless", "-hybrid"]
 for s,outname in zip(a_list, filenames):
     params = {"w0":1.0, "variable_a": 1, "fixed":s, "delta":0.0,  "q":1.0,  "var":[0.5,1.5,100]}
     launch_runs(params, outname, [0.5,1.5,100])
