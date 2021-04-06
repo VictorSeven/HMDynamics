@@ -57,7 +57,7 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 1000.0;
+double tf = 10000.0;
 double trelax = 100.0;
 const double tmeasure = 10.0;
 
@@ -276,9 +276,8 @@ void step(CNetwork<double> &net)
 
 void simulate_single(CNetwork<double> &net, ofstream &output, const double control)
 {
-    cout << a << " " << s << endl;
     const int measure_its = tmeasure / dt;   //Number of iterations to do between measurements
-    const int nmeasures = tf / tmeasure;     //Number of measures we did
+    int nmeasures;                           //Number of measures we did
     double t;
 
     int i;
@@ -289,8 +288,8 @@ void simulate_single(CNetwork<double> &net, ofstream &output, const double contr
 
     //Then make simulations. First relaxation, then measurement.
     for (t = 0.0; t <= trelax; t += dt) step(net);
-
     t = 0.0;
+    nmeasures = 0;
     while(t < tf)
     {
         //Allow a bit of time between measures
@@ -304,6 +303,7 @@ void simulate_single(CNetwork<double> &net, ofstream &output, const double contr
         step(net);
         av_r  += r;
         av_r2 += r*r;
+        nmeasures++;
         t += dt;
     }
 
