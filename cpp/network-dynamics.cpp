@@ -31,6 +31,7 @@ using namespace std;
 
 // --- Declare functions --- //
 bool set_up_network(CNetwork<double> &net, const string filename);
+void initial_conditions(CNetwork<double> &net);
 
 void step(CNetwork<double> &net);
 
@@ -110,7 +111,7 @@ int main(int argc, char* argv[])
         output.close();
     #elif MODE==DIAGRAM
         
-        double s0, sf;
+        double delta0, deltaf;
         double a0, af;
         int ns, na;
         bool variable_a;
@@ -118,20 +119,19 @@ int main(int argc, char* argv[])
         if (argc == 11)
         {
             w0    = stod(argv[1]);
-            delta = stod(argv[2]);
+            s     = stod(argv[2]);
             q     = stod(argv[3]);
             variable_a = stoi(argv[4]);
             if (!variable_a)
             {
-                a     = stod(argv[5]);
-                s0    = stod(argv[6]);
-                sf    = stod(argv[7]);
+                a       = stod(argv[5]);
+                delta0  = stod(argv[6]);
+                deltaf  = stod(argv[7]);
                 ns    = stoi(argv[8]);
             }
             else 
             {
-                s     = stod(argv[5]);
-                cout << s << endl;
+                delta = stod(argv[5]);
                 a0    = stod(argv[6]);
                 af    = stod(argv[7]);
                 na    = stoi(argv[8]);
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
         }
         
         if (variable_a) simulate_diagram(net, a, a0, af, na, output);
-        else simulate_diagram(net, s, s0, sf, ns, output);
+        else simulate_diagram(net, delta, delta0, deltaf, ns, output);
 //        simulate_diagram(net, s0, sf, ns, output);
     #elif MODE==TIMETRACE
         int ntraces, trace_duration;
@@ -200,20 +200,26 @@ int main(int argc, char* argv[])
 
 bool set_up_network(CNetwork<double> &net, const string path_to_network)
 {
-    int i;
     bool network_loaded_ok = false;
 
-    double x,y;
 
     //Read network from file
     network_loaded_ok = net.read_mtx(path_to_network);
     if (!network_loaded_ok) return false;
     
     N = net.get_node_count();
-    
+
     //Link stuff
     //L = net.get_link_count();
     //for (i=0; i < L; i++) net.get_link(i) = q; 
+
+    return network_loaded_ok;
+}
+
+void initial_conditions(CNetwork<double> &net)
+{
+    int i;
+    double x,y;
 
     //Distribution of frequencies
     lorentzian = cauchy_distribution<double>(w0, delta);
@@ -234,7 +240,7 @@ bool set_up_network(CNetwork<double> &net, const string path_to_network)
     r = abs(z);
     psi = arg(z);
     
-    return true;
+    return;
 }
 
 void step(CNetwork<double> &net)
@@ -281,6 +287,9 @@ void simulate_single(CNetwork<double> &net, ofstream &output, const double contr
     double t;
 
     int i;
+
+    //Initial conditions
+    initial_conditions(net);
 
     //Variables to make averages
     double av_r  = 0.0;    
