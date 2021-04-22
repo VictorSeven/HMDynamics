@@ -10,9 +10,10 @@
 #define SINGLE 0 
 #define DIAGRAM 1 
 #define TIMETRACE 2
+#define CHIMERA 3 
 
 #ifndef MODE
-#define MODE DIAGRAM 
+#define MODE CHIMERA 
 #endif 
 
 //Include libraries
@@ -33,10 +34,13 @@ using namespace std;
 bool set_up_network(CNetwork<double> &net, const string filename);
 void initial_conditions(CNetwork<double> &net);
 
+void step_no_measures(CNetwork<double> &net);
 void step(CNetwork<double> &net);
+void step_chimera(CNetwork<double> &net, const int n_moduli, const int osc_per_modulus);
 
 void simulate_single(CNetwork<double> &net, ofstream &output, const double control);
-void simulate_diagram(CNetwork<double> &net, const double s0, const double sf, const int ns, ofstream &output);
+void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli, const int osc_per_modulus);
+
 void simulate_diagram(CNetwork<double> &net, double &selected_var, const double var0, const double varf, const int nvar, ofstream &output);
 void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, const double duration);
 
@@ -58,14 +62,16 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 10000.0;
-double trelax = 100.0;
+double tf = 100.0;
+double trelax = 10.0;
 const double tmeasure = 10.0;
 
 const complex<double> I = complex<double>(0.0, 1.0);
 
 complex<double> z;
 double r, psi;
+
+vector<complex<double>> z_modulus;
 
 // --- Main --- ///
 // This is used to construct and export the desired network to a file
@@ -189,7 +195,38 @@ int main(int argc, char* argv[])
         }
 
         time_traces(net, output, ntraces, trace_duration);
-        
+    #elif MODE==CHIMERA
+        int n_moduli, osc_per_modulus;
+
+        if (argc == 9)
+        {
+            w0    = stod(argv[1]);
+            delta = stod(argv[2]);
+            s     = stod(argv[3]);
+            a     = stod(argv[4]);
+            q     = stod(argv[5]);
+            n_moduli = stoi(argv[6]);
+            networkname = string(argv[7]);
+            filename = string(argv[8]); 
+        }
+        else
+        {
+            cout << "[HMDYNAMICS]: incorrect number of arguments" << endl;
+            return EXIT_SUCCESS;        
+        }
+
+        //Set up the network, including initial conditions
+        correct_setup = set_up_network(net, networkname);
+        osc_per_modulus = net.get_node_count() / n_moduli;
+
+        if (!correct_setup) 
+        {
+            cout << "[HMDYNAMICS]: Network not loaded, execution aborted" << endl;
+            return EXIT_SUCCESS;
+        }
+
+        simulate_single_chimera(net, output, n_moduli, osc_per_modulus);
+
     #endif
     return EXIT_SUCCESS;
 }
@@ -278,6 +315,61 @@ void step(CNetwork<double> &net)
     psi = arg(z);
 }
 
+void step_no_measures(CNetwork<double> &net)
+{
+    int i,j,neigh; 
+
+    double coupling;
+
+    //Copy the state to avoid overwriting
+    vector<double> old_state = net.get_values();
+
+    for (i=0; i < N; i++)
+    {
+        coupling = 0.0;
+        for (j=0; j < net.degree(i); j++)
+        {
+            neigh = net.get_in(i, j);
+            coupling += sin(old_state[neigh] - old_state[i]);
+        }
+
+        coupling *= q / net.degree(i);
+        net[i] += dt * (w[i] + a*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
+
+    }
+}
+
+void step_chimera(CNetwork<double> &net, const int n_moduli, const int osc_per_modulus)
+{
+    int i,j,neigh; 
+    double coupling;
+
+    z_modulus = vector<complex<double>>(n_moduli, complex<double>(0.0,0.0));
+
+
+    //Copy the state to avoid overwriting
+    vector<double> old_state = net.get_values();
+
+    for (i=0; i < N; i++)
+    {
+        coupling = 0.0;
+        for (j=0; j < net.degree(i); j++)
+        {
+            neigh = net.get_in(i, j);
+            coupling += sin(old_state[neigh] - old_state[i]);
+        }
+
+        coupling *= q / net.degree(i);
+        net[i] += dt * (w[i] + a*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
+
+        z_modulus[i / osc_per_modulus] += complex<double>(cos(net[i]),sin(net[i])); 
+    }
+
+
+}
+
+
+
 // --- Functions for phase diagrams and so on
 
 void simulate_single(CNetwork<double> &net, ofstream &output, const double control)
@@ -296,7 +388,7 @@ void simulate_single(CNetwork<double> &net, ofstream &output, const double contr
     double av_r2 = 0.0;
 
     //Then make simulations. First relaxation, then measurement.
-    for (t = 0.0; t <= trelax; t += dt) step(net);
+    for (t = 0.0; t <= trelax; t += dt) step_no_measures(net);
     t = 0.0;
     nmeasures = 0;
     while(t < tf)
@@ -304,7 +396,7 @@ void simulate_single(CNetwork<double> &net, ofstream &output, const double contr
         //Allow a bit of time between measures
         for (i = 0; i < measure_its - 1; i++)
         {
-            step(net);
+            step_no_measures(net);
             t += dt;
         }
 
@@ -323,17 +415,48 @@ void simulate_single(CNetwork<double> &net, ofstream &output, const double contr
     return;
 }
 
-void simulate_diagram(CNetwork<double> &net, const double s0, const double sf, const int ns, ofstream &output)
+//Simulate a single output, storing the Kuramoto order parameter of each moduli directly
+void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli, const int osc_per_modulus)
 {
-    const double ds = (sf - s0) / (1.0 * ns);
+    const int measure_its = tmeasure / dt;   //Number of iterations to do between measurements
+    double t;
+
+    int i;
+
+    //Initial conditions
+    initial_conditions(net);
+
+    //Then make simulations. First relaxation, then measurement.
+    for (t = 0.0; t <= trelax; t += dt) step_no_measures(net);
+
+    t = 0.0;
     output.open(filename);
-    for (s=s0; s < sf; s += ds)
+    while(t < tf)
     {
-        simulate_single(net, output, s);
+        //Allow a bit of time between measures
+        for (i = 0; i < measure_its - 1; i++)
+        {
+            step_no_measures(net);
+            t += dt;
+        }
+
+        //Last step and measure
+        step_chimera(net, n_moduli, osc_per_modulus);
+
+        for (i=0; i < n_moduli; i++)
+        {
+            output << abs(z_modulus[i])/osc_per_modulus << " ";
+        }
+        output << endl;
+
+        t += dt;
     }
     output.close();
+
+    return;
 }
 
+//Generate a phase diagram for the selected parameter
 void simulate_diagram(CNetwork<double> &net, double &selected_var, const double var0, const double varf, const int nvar, ofstream &output)
 {
     const double dvar = (varf - var0) / (1.0 * nvar);
@@ -345,6 +468,7 @@ void simulate_diagram(CNetwork<double> &net, double &selected_var, const double 
     output.close();
 }
 
+//Save time traces
 void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, const double duration)
 {
     int i,trace;
