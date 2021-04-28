@@ -62,9 +62,10 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 100.0;
-double trelax = 10.0;
-const double tmeasure = 10.0;
+double tf = 1000.0;
+double trelax = 100.0;
+const double tmeasure = 20.0;
+const int nitswindow = 50;
 
 const complex<double> I = complex<double>(0.0, 1.0);
 
@@ -440,16 +441,20 @@ void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int 
             t += dt;
         }
 
-        //Last step and measure
-        step_chimera(net, n_moduli, osc_per_modulus);
-        t += dt;
-
-        output << t << " ";
-        for (i=0; i < n_moduli; i++)
+        //Measure for a short time window
+        for (i=0; i < nitswindow; i++)
         {
-            output << abs(z_modulus[i])/osc_per_modulus << " ";
+            step_chimera(net, n_moduli, osc_per_modulus);
+            t += dt;
+            output << t << " ";
+            for (i=0; i < n_moduli; i++)
+            {
+                output << abs(z_modulus[i])/osc_per_modulus << " ";
+            }
+            output << endl;
         }
-        output << endl;
+
+
 
     }
     output.close();
