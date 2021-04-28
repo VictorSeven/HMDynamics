@@ -442,14 +442,15 @@ void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int 
 
         //Last step and measure
         step_chimera(net, n_moduli, osc_per_modulus);
+        t += dt;
 
+        output << t << " ";
         for (i=0; i < n_moduli; i++)
         {
             output << abs(z_modulus[i])/osc_per_modulus << " ";
         }
         output << endl;
 
-        t += dt;
     }
     output.close();
 
