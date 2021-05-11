@@ -43,6 +43,7 @@ void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int 
 
 void simulate_diagram(CNetwork<double> &net, double &selected_var, const double var0, const double varf, const int nvar, ofstream &output);
 void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, const double duration);
+void time_traces_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli, const int osc_per_modulus);
 
 // --- Random number generation --- //
 mt19937 gen(85345385434);
@@ -62,8 +63,8 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 1000.0;
-double trelax = 100.0;
+double tf = 400.0;
+double trelax = 300.0;
 const double tmeasure = 20.0;
 const int nitswindow = 50;
 
@@ -226,7 +227,8 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
 
-        simulate_single_chimera(net, output, n_moduli, osc_per_modulus);
+        //simulate_single_chimera(net, output, n_moduli, osc_per_modulus);
+        time_traces_chimera(net, output, n_moduli, osc_per_modulus);
 
     #endif
     return EXIT_SUCCESS;
@@ -422,7 +424,7 @@ void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int 
     const int measure_its = tmeasure / dt;   //Number of iterations to do between measurements
     double t;
 
-    int i;
+    int i,j;
 
     //Initial conditions
     initial_conditions(net);
@@ -447,15 +449,13 @@ void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int 
             step_chimera(net, n_moduli, osc_per_modulus);
             t += dt;
             output << t << " ";
-            for (i=0; i < n_moduli; i++)
+            for (j=0; j < n_moduli; j++)
             {
-                output << abs(z_modulus[i])/osc_per_modulus << " ";
+                //output << real(z_modulus[j])/osc_per_modulus << " " << imag(z_modulus[j]) / osc_per_modulus << " ";
+                output << abs(z_modulus[j]) / osc_per_modulus << " ";
             }
             output << endl;
         }
-
-
-
     }
     output.close();
 
@@ -498,4 +498,27 @@ void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, con
         //Wait a bit between traces
         for (t = 0.0; t < tf; t += dt) step(net);
     } 
+}
+
+void time_traces_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli, const int osc_per_modulus)
+{
+    int i,j,trace;
+    double t;
+
+    //First relaxation, then measurement.
+    for (t = 0.0; t < trelax; t += dt) step(net);
+
+    t = 0.0;
+    output.open(filename);
+    while(t < tf)
+    {
+        step_chimera(net, n_moduli, osc_per_modulus);
+        t += dt;
+        for (j=0; j < n_moduli; j++)
+        {
+            output << real(z_modulus[j])/osc_per_modulus << " " << imag(z_modulus[j]) / osc_per_modulus << " ";
+        }
+        output << endl;
+    }
+    output.close();
 }
