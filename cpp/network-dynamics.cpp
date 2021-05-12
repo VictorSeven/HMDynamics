@@ -290,7 +290,6 @@ void step(CNetwork<double> &net)
     double x,y;
     
     double coupling;
-
     z = complex<double>(0.0, 0.0);
     x = y = 0.0;
 
@@ -480,6 +479,9 @@ void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, con
     int i,trace;
     double t;
 
+    //Initial conditions
+    initial_conditions(net);
+
     //First relaxation, then measurement.
     for (t = 0.0; t < trelax; t += dt) step(net);
 
@@ -502,8 +504,11 @@ void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, con
 
 void time_traces_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli, const int osc_per_modulus)
 {
-    int i,j,trace;
+    int i,j;
     double t;
+
+    //Initial conditions
+    initial_conditions(net);
 
     //First relaxation, then measurement.
     for (t = 0.0; t < trelax; t += dt) step(net);
