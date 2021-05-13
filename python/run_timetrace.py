@@ -55,8 +55,8 @@ def launch_runs(params, extension):
 
 # --- Run dynamics for each network 
 
-a_list = [0.0, 0.0,  0.0,  0.5, 0.5, 0.5,  0.9,   1.1,   1.07,  0.9,   1.1,   1.0]
-d_list = [0.3, 0.45, 0.55, 0.2, 0.3, 0.4,  0.125, 0.125, 0.125, 0.005, 0.005, 0.005] 
+a_list = [0.0,  0.0, 0.0,   0.5,  0.5, 0.5,   0.8, 0.96,  1.2,    0.8,  0.98,   1.1]
+d_list = [0.2, 0.39, 0.7,  0.15, 0.32, 0.5,  0.08, 0.08, 0.08,  0.005, 0.005, 0.005] 
 #s_list = [0.8, 1.0, 1.2, 0.8, 0.9, 1.0, 0.5, 0.5, 0.5, 0.1, 0.1, 0.1]
 name_list = ["hopf_sub", "hopf_crit", "hopf_super", "hopf_exc_sub", "hopf_exc_crit", "hopf_exc_super", "hyb_sub", "hyb_crit", "hyb_super", "snic_sub", "snic_crit", "snic_super"]
 
