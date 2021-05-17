@@ -46,53 +46,54 @@ if use_all:
 else:
     networks_files = sys.argv[1:]
 
+
 def launch_runs(params, extension, var_space, points_per_file=10):
     var0, varf, npoints = var_space 
     n_simulations = npoints // points_per_file
     var = np.linspace(var0, varf, n_simulations)
+
+    #Read all the networks
     for network in networks_files:
         if network.endswith(".mtx"):
-            network = network[:-4]
+            network = network[:-4] #Eliminate .mtx from name
             netpath = netfolder + network
+
+            #Launch simulations
             for i in range(n_simulations-1):
                 params["var"] = [var[i], var[i+1], points_per_file] 
                 outpath = datafolder + network + extension + "_part{0}".format(i)
-                os.system("slanzarv --nomail -J {procname} {exe} {w0} {sigma} {q} {variable_a} {fixed} {var[0]} {var[1]} {var[2]} {netpath} {outpath}".format(**params, procname="pd"+extension+"-"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
+                os.system("slanzarv --nomail -J {procname} {exe} {w0} {delta} {q} {variable_a} {fixed} {var[0]} {var[1]} {var[2]} {netpath} {outpath}".format(**params, procname="pd"+extension+"-"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
 
 
 # --- Run dynamics for each network 
 
-#Kuramoto model simulation
-to_detrm_noise = lambda x: 0.5*x*x
+#Stochastic Kuramoto model simulation
+stocht_noise = np.array([0.5, 1.5, 100])
+determ_noise = 0.0
 
-total_noise = np.array([0.5, 1.5])
-stocht_noise = 0.0
-determ_noise = total_noise - stocht_noise 
-determ_noise = to_detrm_noise(determ_noise)
-
-params = {"w0":1.0, "variable_a": 0, "fixed":0.0, "sigma":stocht_noise, "q":1.0}
-launch_runs(params, "kuramoto", [determ_noise[0], determ_noise[1], 100])
+params = {"w0":1.0, "variable_a":0, "fixed":0.0, "delta":determ_noise, "q":1.0}
+launch_runs(params, "kuramoto", stocht_noise)
 
 #Fixed = a
-a_list = [0.0, 0.5] 
+a_list = [0.0, 0.5, 0.8, 0.92, 1.0, 1.1] 
 
-total_noise = np.array([0.5, 1.5])
-stocht_noise = 0.1
-determ_noise = total_noise - stocht_noise 
-determ_noise = to_detrm_noise(determ_noise)
+stocht_noise = np.array([0.3, 1.4, 100])
+determ_noise = to_detrm_noise(0.5)
 
-filenames = ["-non-excitable", "-exc_hopf"]
+filenames = [":.2f".format(a) for a in a_list]
+#filenames = ["-non-excitable", "-exc-hopf"]
 for a,outname in zip(a_list, filenames):
-    params = {"w0":1.0, "variable_a": 0, "fixed":a, "sigma":stocht_noise,  "q":1.0}
-    launch_runs(params, outname, [determ_noise[0], determ_noise[1], 100])
+    params = {"w0":1.0, "variable_a": 0, "fixed":a, "delta":determ_noise,  "q":1.0}
+    launch_runs(params, outname, stocht_noise)
 
 #Fixed = s
-total_noise = np.array([0.2, 0.5])
-stocht_noise = 0.1
-determ_noise = total_noise - stocht_noise 
-determ_noise = to_detrm_noise(determ_noise)
+stocht_noise = [0.1, 0.3, 0.5, 0.6, 0.8] 
+determ_noise = to_detrm_noise(0.5)
 
-filenames = ["-snic", "-hybrid"]
-for delta,outname in zip(determ_noise, filenames):
-    params = {"w0":1.0, "variable_a":1, "fixed":delta, "sigma":stocht_noise,  "q":1.0}
-    launch_runs(params, outname, [0.5,1.5,100])
+a_list = np.array([0.5,1.5,100])
+
+filenames = [":.2f".format(s) for s in stocht_noise]
+#filenames = ["-snic", "-hybrid"]
+for s,outname in zip(stocht_noise, filenames):
+    params = {"w0":1.0, "variable_a":1, "fixed":s, "delta":determ_noise,  "q":1.0}
+    launch_runs(params, outname, a_list)

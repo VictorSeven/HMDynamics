@@ -13,7 +13,7 @@
 #define CHIMERA 3 
 
 #ifndef MODE
-#define MODE CHIMERA 
+#define MODE DIAGRAM 
 #endif 
 
 //Include libraries
@@ -119,7 +119,7 @@ int main(int argc, char* argv[])
         output.close();
     #elif MODE==DIAGRAM
         
-        double delta0, deltaf;
+        double s0, sf;
         double a0, af;
         int ns, na;
         bool variable_a;
@@ -127,19 +127,19 @@ int main(int argc, char* argv[])
         if (argc == 11)
         {
             w0    = stod(argv[1]);
-            s     = stod(argv[2]);
+            delta = stod(argv[2]);
             q     = stod(argv[3]);
             variable_a = stoi(argv[4]);
             if (!variable_a)
             {
-                a       = stod(argv[5]);
-                delta0  = stod(argv[6]);
-                deltaf  = stod(argv[7]);
+                a     = stod(argv[5]);
+                s0    = stod(argv[6]);
+                sf    = stod(argv[7]);
                 ns    = stoi(argv[8]);
             }
             else 
             {
-                delta = stod(argv[5]);
+                s     = stod(argv[5]);
                 a0    = stod(argv[6]);
                 af    = stod(argv[7]);
                 na    = stoi(argv[8]);
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
         }
         
         if (variable_a) simulate_diagram(net, a, a0, af, na, output);
-        else simulate_diagram(net, delta, delta0, deltaf, ns, output);
+        else simulate_diagram(net, s, s0, sf, ns, output);
 //        simulate_diagram(net, s0, sf, ns, output);
     #elif MODE==TIMETRACE
         int ntraces, trace_duration;
