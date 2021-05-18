@@ -63,9 +63,9 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 400.0;
-double trelax = 300.0;
-const double tmeasure = 20.0;
+double tf = 300.0;
+double trelax = 500.0;
+const double tmeasure = 10.0;
 const int nitswindow = 50;
 
 const complex<double> I = complex<double>(0.0, 1.0);

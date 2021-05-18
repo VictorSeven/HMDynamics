@@ -80,7 +80,7 @@ a_list = [0.0, 0.5, 0.8, 0.92, 1.0, 1.1]
 stocht_noise = np.array([0.3, 1.4, 100])
 determ_noise = to_detrm_noise(0.5)
 
-filenames = [":.2f".format(a) for a in a_list]
+filenames = ["a_{0:.2f}".format(a) for a in a_list]
 #filenames = ["-non-excitable", "-exc-hopf"]
 for a,outname in zip(a_list, filenames):
     params = {"w0":1.0, "variable_a": 0, "fixed":a, "delta":determ_noise,  "q":1.0}
@@ -92,7 +92,7 @@ determ_noise = to_detrm_noise(0.5)
 
 a_list = np.array([0.5,1.5,100])
 
-filenames = [":.2f".format(s) for s in stocht_noise]
+filenames = ["s_{0:.2f}".format(s) for s in stocht_noise]
 #filenames = ["-snic", "-hybrid"]
 for s,outname in zip(stocht_noise, filenames):
     params = {"w0":1.0, "variable_a":1, "fixed":s, "delta":determ_noise,  "q":1.0}
