@@ -10,10 +10,11 @@
 #define SINGLE 0 
 #define DIAGRAM 1 
 #define TIMETRACE 2
-#define CHIMERA 3 
+#define TIMESERIES 3
+#define CHIMERA 4 
 
 #ifndef MODE
-#define MODE DIAGRAM 
+#define MODE TIMESERIES 
 #endif 
 
 //Include libraries
@@ -63,9 +64,9 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 300.0;
-double trelax = 500.0;
-const double tmeasure = 10.0;
+double tf = 1000.0;
+double trelax = 1000.0;
+const double tmeasure = 5.0;
 const int nitswindow = 50;
 
 const complex<double> I = complex<double>(0.0, 1.0);
@@ -165,6 +166,47 @@ int main(int argc, char* argv[])
         if (variable_a) simulate_diagram(net, a, a0, af, na, output);
         else simulate_diagram(net, s, s0, sf, ns, output);
 //        simulate_diagram(net, s0, sf, ns, output);
+    #elif MODE==TIMESERIES
+        double t;
+        if (argc == 10)
+        {
+            w0    = stod(argv[1]);
+            delta = stod(argv[2]);
+            s     = stod(argv[3]);
+            a     = stod(argv[4]);
+            q     = stod(argv[5]);
+            tf    = stod(argv[6]);
+            trelax= stod(argv[7]);
+            networkname = string(argv[8]);
+            filename = string(argv[9]); 
+        }
+        else
+        {
+            cout << "[HMDYNAMICS]: incorrect number of arguments" << endl;
+            return EXIT_SUCCESS;        
+        }
+
+        //Set up the network, including initial conditions
+        correct_setup = set_up_network(net, networkname);
+
+        if (!correct_setup) 
+        {
+            cout << "[HMDYNAMICS]: Network not loaded, execution aborted" << endl;
+            return EXIT_SUCCESS;
+        }
+
+        initial_conditions(net);
+
+        cout << "wop" << endl;
+        for (t=0; t < trelax; t += dt) step_no_measures(net);
+        output.open(filename);
+        for (t=0; t < tf; t += dt)
+        {
+            step(net);
+            output << r << " " << 1.0 + sin(psi) << endl;
+        }
+        output.close();
+
     #elif MODE==TIMETRACE
         int ntraces, trace_duration;
 
@@ -468,6 +510,7 @@ void simulate_diagram(CNetwork<double> &net, double &selected_var, const double 
     output.open(filename);
     for (selected_var=var0; selected_var < varf; selected_var += dvar)
     {
+        cout << selected_var << endl;
         simulate_single(net, output, selected_var);
     }
     output.close();

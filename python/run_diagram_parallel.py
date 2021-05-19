@@ -49,7 +49,7 @@ else:
 
 def launch_runs(params, extension, var_space, points_per_file=10):
     var0, varf, npoints = var_space 
-    n_simulations = npoints // points_per_file
+    n_simulations = int(npoints // points_per_file)
     var = np.linspace(var0, varf, n_simulations)
 
     #Read all the networks
@@ -78,7 +78,7 @@ launch_runs(params, "kuramoto", stocht_noise)
 a_list = [0.0, 0.5, 0.8, 0.92, 1.0, 1.1] 
 
 stocht_noise = np.array([0.3, 1.4, 100])
-determ_noise = to_detrm_noise(0.5)
+determ_noise = 0.03
 
 filenames = ["a_{0:.2f}".format(a) for a in a_list]
 #filenames = ["-non-excitable", "-exc-hopf"]
@@ -88,7 +88,7 @@ for a,outname in zip(a_list, filenames):
 
 #Fixed = s
 stocht_noise = [0.1, 0.3, 0.5, 0.6, 0.8] 
-determ_noise = to_detrm_noise(0.5)
+determ_noise = 0.03 
 
 a_list = np.array([0.5,1.5,100])
 
