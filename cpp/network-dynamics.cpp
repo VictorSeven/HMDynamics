@@ -64,8 +64,8 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 1000.0;
-double trelax = 1000.0;
+double tf = 1200.0;
+double trelax = 2000.0;
 const double tmeasure = 5.0;
 const int nitswindow = 50;
 
@@ -197,7 +197,6 @@ int main(int argc, char* argv[])
 
         initial_conditions(net);
 
-        cout << "wop" << endl;
         for (t=0; t < trelax; t += dt) step_no_measures(net);
         output.open(filename);
         for (t=0; t < tf; t += dt)

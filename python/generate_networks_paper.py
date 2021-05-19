@@ -38,11 +38,19 @@ print("Compilation successful")
 
 # --- Network creation
 
-# - Erdos-Renyi 
-n,k = (100, 12.0) #number of neurons and average degree
-netfile = netfolder + "single-module" #Where to save the result
+# - Single modulo and Erdos-Renyi 
 
-system("{launch}{exe} --random 1 {n} {k} {save}".format(launch=launch, exe=cppoutput, n=n, k=k, save=netfile))
+def generate_er_network(n,k,name):
+    n,k = (n, k) #number of neurons and average degree
+    netfile = netfolder + name #Where to save the result
+
+    system("{launch}{exe} --random 1 {n} {k} {save}".format(launch=launch, exe=cppoutput, n=n, k=k, save=netfile))
+
+generate_er_network(100, 12.0, "single-modulo") #Single modulo
+generate_er_network(6400, 12.0, "erdos-renyi")  #Complete ER with same connectivity as modulus
+generate_er_network(6400, 30.0,  "er-cb6")      #ER with same average degree as CB6 network
+
+print("Erdos-Renyi OK")
 
 # - Binary HM Random
 depth = 6

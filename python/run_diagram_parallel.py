@@ -77,7 +77,7 @@ launch_runs(params, "kuramoto", stocht_noise)
 #Fixed = a
 a_list = [0.0, 0.5, 0.8, 0.92, 1.0, 1.1] 
 
-stocht_noise = np.array([0.3, 1.4, 100])
+stocht_noise = np.array([0.2, 1.4, 100])
 determ_noise = 0.03
 
 filenames = ["a_{0:.2f}".format(a) for a in a_list]
@@ -90,7 +90,7 @@ for a,outname in zip(a_list, filenames):
 stocht_noise = [0.1, 0.3, 0.5, 0.6, 0.8] 
 determ_noise = 0.03 
 
-a_list = np.array([0.5,1.5,100])
+a_list = np.array([0.1,1.2,100])
 
 filenames = ["s_{0:.2f}".format(s) for s in stocht_noise]
 #filenames = ["-snic", "-hybrid"]
