@@ -46,10 +46,12 @@ networks/
 cpp/bin/
 data/
 graphs/
+python/paper_figs/__pycache__/
 
 #Do not count proteus exe folder (just in case) and also ignore data
 .vscode/
 *.graphml
 *.mtx
 *.png
+*.pdf
 .ipynb_*
