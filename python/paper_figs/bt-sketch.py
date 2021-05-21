@@ -24,14 +24,14 @@ def bogdanov_takens(t, xt, a, b):
 t = np.linspace(0.0, 70.0, 1000)
 
 #Parameters for frequency and excitability
-param_set = [(3, 3.06),  (2.96, 3.06), (2.96, 3.1), (2.99, 3.09)]
+param_set = [(2.96, 3.06), (3, 3.06),   (2.96, 3.1), (2.99, 3.09)]
 titles =    ["Excit.",   "Asynch.",     "Sync.",     "Hybrid"]
 
 #Initial conditions
 x0_set = [(-0.1, -0.8), (0.0, -0.5), (0.1,-0.1), (0.3, 0.2), (-0.2, -0.8), (-0.15, -0.9), (-0.3, 0.3), (-0.5, 0.6), (-0.4, -0.6)]
 
 #Set colormap per graph
-colormaps = ["YlOrBr", "YlGn", "OrRd", "PuBu"]
+colormaps = ["YlGn", "YlOrBr", "OrRd", "PuBu"]
 init_color = 0.3
 ncolors = len(x0_set)
 palettes = {} 
@@ -76,8 +76,8 @@ for i,(a,b) in enumerate(param_set):
     axes[i].set_xticklabels([])
     axes[i].set_yticklabels([])
     #Set title
-    axes[i].set_title(titles[i], loc="left")
+    axes[i].set_title(titles[i], loc="left", color=cm[2*len(cm)//3])
 
 #Last steps
-plt.savefig("sketch-phase.pdf", bbox_inches="tight")
+plt.savefig("sketch-phase.svg")
 plt.show()

@@ -53,5 +53,6 @@ python/paper_figs/__pycache__/
 *.graphml
 *.mtx
 *.png
+*.svg
 *.pdf
 .ipynb_*
