@@ -51,21 +51,22 @@ mt19937 gen(85345385434);
 uniform_real_distribution<double> ran_u(0.0, 1.0);
 normal_distribution<double> ran_g(0.0, 1.0);
 cauchy_distribution<double> lorentzian(0.0, 1.0);
+normal_distribution<double> gaussian;
 
 // --- Global constants --- //
 int N;
+const int nmoduli = 100;
 
-vector<double> w;
-double w0,delta,q,a,s;
+vector<double> w, a;
+double w0,delta,q,a0,s;
 string networkname = "hmrandom";
 string filename = "kuramoto";
-
 
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 1200.0;
-double trelax = 2000.0;
+double tf = 300.0;
+double trelax = 200.0;
 const double tmeasure = 5.0;
 const int nitswindow = 50;
 
@@ -101,7 +102,7 @@ int main(int argc, char* argv[])
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
             s     = stod(argv[3]);
-            a     = stod(argv[4]);
+            a0     = stod(argv[4]);
             q     = stod(argv[5]);
             networkname = string(argv[6]);
             filename = string(argv[7]); 
@@ -120,8 +121,8 @@ int main(int argc, char* argv[])
         output.close();
     #elif MODE==DIAGRAM
         
-        double s0, sf;
-        double a0, af;
+        double si, sf;
+        double ai, af;
         int ns, na;
         bool variable_a;
 
@@ -133,15 +134,15 @@ int main(int argc, char* argv[])
             variable_a = stoi(argv[4]);
             if (!variable_a)
             {
-                a     = stod(argv[5]);
-                s0    = stod(argv[6]);
+                a0     = stod(argv[5]);
+                si    = stod(argv[6]);
                 sf    = stod(argv[7]);
                 ns    = stoi(argv[8]);
             }
             else 
             {
                 s     = stod(argv[5]);
-                a0    = stod(argv[6]);
+                ai    = stod(argv[6]);
                 af    = stod(argv[7]);
                 na    = stoi(argv[8]);
             }
@@ -163,8 +164,8 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
         
-        if (variable_a) simulate_diagram(net, a, a0, af, na, output);
-        else simulate_diagram(net, s, s0, sf, ns, output);
+        if (variable_a) simulate_diagram(net, a0, ai, af, na, output);
+        else simulate_diagram(net, s, si, sf, ns, output);
 //        simulate_diagram(net, s0, sf, ns, output);
     #elif MODE==TIMESERIES
         double t;
@@ -173,7 +174,7 @@ int main(int argc, char* argv[])
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
             s     = stod(argv[3]);
-            a     = stod(argv[4]);
+            a0    = stod(argv[4]);
             q     = stod(argv[5]);
             tf    = stod(argv[6]);
             trelax= stod(argv[7]);
@@ -195,8 +196,11 @@ int main(int argc, char* argv[])
             return EXIT_SUCCESS;
         }
 
+        cout << "a" << endl;
+
         initial_conditions(net);
 
+        cout << "a" << endl;
         for (t=0; t < trelax; t += dt) step_no_measures(net);
         output.open(filename);
         for (t=0; t < tf; t += dt)
@@ -214,7 +218,7 @@ int main(int argc, char* argv[])
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
             s     = stod(argv[3]);
-            a     = stod(argv[4]);
+            a0    = stod(argv[4]);
             q     = stod(argv[5]);
             ntraces = stoi(argv[6]);
             trace_duration = stod(argv[7]);
@@ -246,7 +250,7 @@ int main(int argc, char* argv[])
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
             s     = stod(argv[3]);
-            a     = stod(argv[4]);
+            a0    = stod(argv[4]);
             q     = stod(argv[5]);
             n_moduli = stoi(argv[6]);
             networkname = string(argv[7]);
@@ -287,12 +291,8 @@ bool set_up_network(CNetwork<double> &net, const string path_to_network)
     //Read network from file
     network_loaded_ok = net.read_mtx(path_to_network);
     if (!network_loaded_ok) return false;
-    
-    N = net.get_node_count();
 
-    //Link stuff
-    //L = net.get_link_count();
-    //for (i=0; i < L; i++) net.get_link(i) = q; 
+    N = net.get_node_count();
 
     return network_loaded_ok;
 }
@@ -301,17 +301,27 @@ void initial_conditions(CNetwork<double> &net)
 {
     int i;
     double x,y;
+    int M;
+    
+    gaussian = normal_distribution<double>(w0, delta);
+    M = N / nmoduli;
+    vector<double> wmoduli = vector<double>(M);  
+    for (i=0; i < M; i++)
+    {
+        wmoduli[i] = gaussian(gen);
+    }
 
-    //Distribution of frequencies
-    lorentzian = cauchy_distribution<double>(w0, delta);
+    cout << "b" << endl;
 
     //Set initial conditions
     x = y = 0.0;
     w = vector<double>(N);
+    a = vector<double>(N);
     for (i=0; i < N; i++) 
     {
         net[i] = 2.0 * M_2_PI * ran_u(gen);
-        w[i] = lorentzian(gen);
+        w[i] = wmoduli[i / nmoduli]; 
+        a[i] = a0*w[i]/w0;
 
         x += cos(net[i]);
         y += sin(net[i]);
@@ -347,7 +357,7 @@ void step(CNetwork<double> &net)
         }
 
         coupling *= q / net.degree(i);
-        net[i] += dt * (w[i] + a*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
+        net[i] += dt * (w[i] + a[i]*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
 
         x += cos(net[i]);
         y += sin(net[i]);
@@ -377,7 +387,7 @@ void step_no_measures(CNetwork<double> &net)
         }
 
         coupling *= q / net.degree(i);
-        net[i] += dt * (w[i] + a*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
+        net[i] += dt * (w[i] + a[i]*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
 
     }
 }
@@ -403,7 +413,7 @@ void step_chimera(CNetwork<double> &net, const int n_moduli, const int osc_per_m
         }
 
         coupling *= q / net.degree(i);
-        net[i] += dt * (w[i] + a*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
+        net[i] += dt * (w[i] + a[i]*sin(old_state[i]) + coupling) + sqdt * ran_g(gen) * s;
 
         z_modulus[i / osc_per_modulus] += complex<double>(cos(net[i]),sin(net[i])); 
     }
