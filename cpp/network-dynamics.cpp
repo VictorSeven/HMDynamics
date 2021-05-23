@@ -14,7 +14,7 @@
 #define CHIMERA 4 
 
 #ifndef MODE
-#define MODE TIMESERIES 
+#define MODE CHIMERA 
 #endif 
 
 //Include libraries
@@ -44,7 +44,7 @@ void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int 
 
 void simulate_diagram(CNetwork<double> &net, double &selected_var, const double var0, const double varf, const int nvar, ofstream &output);
 void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, const double duration);
-void time_traces_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli, const int osc_per_modulus);
+void time_traces_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli);
 
 // --- Random number generation --- //
 mt19937 gen(85345385434);
@@ -55,7 +55,7 @@ normal_distribution<double> gaussian;
 
 // --- Global constants --- //
 int N;
-const int nmoduli = 100;
+int osc_per_modulus = 100;
 
 vector<double> w, a;
 double w0,delta,q,a0,s;
@@ -65,8 +65,8 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 300.0;
-double trelax = 200.0;
+double tf = 4000.0;
+double trelax = 500.0;
 const double tmeasure = 5.0;
 const int nitswindow = 50;
 
@@ -243,7 +243,7 @@ int main(int argc, char* argv[])
 
         time_traces(net, output, ntraces, trace_duration);
     #elif MODE==CHIMERA
-        int n_moduli, osc_per_modulus;
+        int n_moduli;
 
         if (argc == 9)
         {
@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
             s     = stod(argv[3]);
             a0    = stod(argv[4]);
             q     = stod(argv[5]);
-            n_moduli = stoi(argv[6]);
+            osc_per_modulus = stoi(argv[6]);
             networkname = string(argv[7]);
             filename = string(argv[8]); 
         }
@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
 
         //Set up the network, including initial conditions
         correct_setup = set_up_network(net, networkname);
-        osc_per_modulus = net.get_node_count() / n_moduli;
+        n_moduli = net.get_node_count() / osc_per_modulus;
 
         if (!correct_setup) 
         {
@@ -273,7 +273,7 @@ int main(int argc, char* argv[])
         }
 
         //simulate_single_chimera(net, output, n_moduli, osc_per_modulus);
-        time_traces_chimera(net, output, n_moduli, osc_per_modulus);
+        time_traces_chimera(net, output, n_moduli);
 
     #endif
     return EXIT_SUCCESS;
@@ -301,12 +301,12 @@ void initial_conditions(CNetwork<double> &net)
 {
     int i;
     double x,y;
-    int M;
+    int n_moduli;
     
     gaussian = normal_distribution<double>(w0, delta);
-    M = N / nmoduli;
-    vector<double> wmoduli = vector<double>(M);  
-    for (i=0; i < M; i++)
+    n_moduli = N / osc_per_modulus;
+    vector<double> wmoduli = vector<double>(n_moduli);  
+    for (i=0; i < n_moduli; i++)
     {
         wmoduli[i] = gaussian(gen);
     }
@@ -320,7 +320,7 @@ void initial_conditions(CNetwork<double> &net)
     for (i=0; i < N; i++) 
     {
         net[i] = 2.0 * M_2_PI * ran_u(gen);
-        w[i] = wmoduli[i / nmoduli]; 
+        w[i] = wmoduli[i / osc_per_modulus]; 
         a[i] = a0*w[i]/w0;
 
         x += cos(net[i]);
@@ -554,7 +554,7 @@ void time_traces(CNetwork<double> &net, ofstream &output, const int ntraces, con
     } 
 }
 
-void time_traces_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli, const int osc_per_modulus)
+void time_traces_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli)
 {
     int i,j;
     double t;

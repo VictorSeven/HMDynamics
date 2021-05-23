@@ -20,7 +20,7 @@ else:
 # --- C++ compilation and preparation 
 
 #For compiling, also defining some important paths
-datafolder = path_2_this + "/../data/chimera/"
+datafolder = path_2_this + "/../data/functional-data/"
 cppfolder = path_2_this + "/../cpp/"
 cppfile = cppfolder + "network-dynamics.cpp"
 cppoutput = cppfolder + "bin/chimera.exe"
@@ -46,30 +46,50 @@ else:
     networks_files = sys.argv[1:]
 
 #Automatically launch all possible networks in the folder
-def launch_runs(params, extension):
-    network_moduli = {"erdos-renyi":10, "r4":30, "c4": 30, "rb7":128, "cb7":128}
-    for network in networks_files:
-        #Filter just the ones I can read
-        if network.endswith(".mtx"):
-            #Get the number of moduli of this network (known by construction, check generate_networks)
-            network = network[:-4]
-            params["nmoduli"] = network_moduli[network] 
+def launch_runs(params, extension, network=None):
+    if network != None:
+        #Get all paths and then run program
+        netpath = netfolder + network
+        outpath = datafolder + network + '-' + extension
+        os.system("slanzarv --nomail --short -J {procname} {exe} {w0} {delta} {s} {a} {q} {nmoduli} {netpath} {outpath}".format(**params, procname="trace_"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
+    else:
+        for network in networks_files:
+            #Filter just the ones I can read
+            if network.endswith(".mtx"):
+                #Get the number of moduli of this network (known by construction, check generate_networks)
+                network = network[:-4]
 
-            #Get all paths and then run program
-            netpath = netfolder + network
-            outpath = datafolder + network + '-' + extension
-            os.system("slanzarv --nomail -J {procname} {exe} {w0} {delta} {s} {a} {q} {nmoduli} {netpath} {outpath}".format(**params, procname="trace_"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
+                #Get all paths and then run program
+                netpath = netfolder + network
+                outpath = datafolder + network + '-' + extension
+                os.system("slanzarv --nomail --short -J {procname} {exe} {w0} {delta} {s} {a} {q} {nmoduli} {netpath} {outpath}".format(**params, procname="trace_"+network, exe=cppoutput, netpath=netpath, outpath=outpath))
 
 # --- Run dynamics for each network 
 
-a_list = [0.0, 0.0,  0.0,  0.5, 0.5, 0.5,  0.9,   1.1,   1.07,  0.9,   1.1,   1.0]
-s_list = [0.3, 0.45, 0.55, 0.2, 0.3, 0.4,  0.125, 0.125, 0.125, 0.005, 0.005, 0.005] 
-#s_list = [0.8, 1.0, 1.2, 0.8, 0.9, 1.0, 0.5, 0.5, 0.5, 0.1, 0.1, 0.1]
 name_list = ["hopf_sub", "hopf_crit", "hopf_super", "hopf_exc_sub", "hopf_exc_crit", "hopf_exc_super", "hyb_sub", "hyb_crit", "hyb_super", "snic_sub", "snic_crit", "snic_super"]
 
+network = "er-cb6"
+a_list = [0.0, 0.0,  0.0,  0.5, 0.5, 0.5,    0.9,   1.07,   1.1,  0.9,   1.0,  1.1]
+s_list = [0.8, 0.95, 1.1,  0.7, 0.84, 0.95,  0.5,   0.5,    0.5,  0.5,   0.3,  0.3] 
+
 for a,s,name in zip(a_list, s_list, name_list):
-    params = {"w0":1.0, "a":a, "delta":0.03, "s":s, "q":1.0}
-    launch_runs(params, name)
+    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
+    launch_runs(params, name, network)
 
 
+network = "rb6"
+a_list = [0.0, 0.0,  0.0,   0.5, 0.5,  0.5,   0.9,  1.07, 1.2,   0.9, 1.0,  1.1]
+s_list = [0.5, 0.75, 1.1,   0.5, 0.78, 0.8,   0.5,  0.5,  0.5,   0.3,  0.3, 0.3] 
 
+for a,s,name in zip(a_list, s_list, name_list):
+    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
+    launch_runs(params, name, network)
+
+
+network = "cb6"
+a_list = [0.0, 0.0,  0.0,   0.5, 0.5,  0.5,   0.9,  1.07, 1.2,   0.9,  1.0, 1.1]
+s_list = [0.5, 0.8, 1.1,    0.5, 0.8, 0.8,    0.5,  0.5,  0.5,   0.3,  0.3, 0.3] 
+
+for a,s,name in zip(a_list, s_list, name_list):
+    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
+    launch_runs(params, name, network)
