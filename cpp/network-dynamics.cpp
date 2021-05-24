@@ -66,7 +66,7 @@ const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
 double tf = 4000.0;
-double trelax = 500.0;
+double trelax = 600.0;
 const double tmeasure = 5.0;
 const int nitswindow = 50;
 
