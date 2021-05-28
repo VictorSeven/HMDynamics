@@ -14,7 +14,7 @@
 #define CHIMERA 4 
 
 #ifndef MODE
-#define MODE CHIMERA 
+#define MODE DIAGRAM 
 #endif 
 
 //Include libraries
@@ -40,6 +40,7 @@ void step(CNetwork<double> &net);
 void step_chimera(CNetwork<double> &net, const int n_moduli, const int osc_per_modulus);
 
 void simulate_single(CNetwork<double> &net, ofstream &output, const double control);
+void simulate_single_shinomoto(CNetwork<double> &net, ofstream &output, const double control);
 void simulate_single_chimera(CNetwork<double> &net, ofstream &output, const int n_moduli, const int osc_per_modulus);
 
 void simulate_diagram(CNetwork<double> &net, double &selected_var, const double var0, const double varf, const int nvar, ofstream &output);
@@ -65,7 +66,7 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 4000.0;
+double tf = 10.0;
 double trelax = 600.0;
 const double tmeasure = 5.0;
 const int nitswindow = 50;
@@ -425,6 +426,60 @@ void step_chimera(CNetwork<double> &net, const int n_moduli, const int osc_per_m
 
 // --- Functions for phase diagrams and so on
 
+//To compute Shinomoto-Kuramoto order parameter in the phase diagram
+void simulate_single_shinomoto(CNetwork<double> &net, ofstream &output, const double control)
+{
+    double shino;
+    int nmeasures;                           //Number of measures we did
+    double t;
+
+    int i,part;
+
+    //Initial conditions
+    initial_conditions(net);
+
+    //Variables to make averages
+    double av_r, av_r2;
+    av_r = av_r2 = 0.0;    
+    double av_s, av_s2;
+    av_s  = av_s2 = 0.0;
+    complex<double> av_z = complex<double>(0.0,0.0);
+
+    int parts_shinomoto = 100;
+
+    //Then make simulations. First relaxation, then measurement.
+    for (t = 0.0; t <= trelax; t += dt) step_no_measures(net);
+
+    t = 0.0;
+
+    for (part=0; part < parts_shinomoto; part++)
+    {
+        av_z = complex<double>(0.0,0.0);
+        for (t=0; t < tf; t += dt)
+        {
+            step(net);
+
+            av_r  += r;
+            av_r2 += r*r;
+            av_z  += z;
+        }
+
+        av_z /= tf / dt;
+        av_r2 /= tf / dt;
+
+        shino = av_r2 - norm(av_z);
+        av_s += shino;
+        av_s2 += shino*shino;
+    }
+
+    av_s /= 1.0 * parts_shinomoto;
+    av_s2 /= 1.0 * parts_shinomoto;
+
+    output << control << " " << av_s << " " << av_s2 - av_s*av_s << endl;
+    
+    return;
+}
+
 void simulate_single(CNetwork<double> &net, ofstream &output, const double control)
 {
     const int measure_its = tmeasure / dt;   //Number of iterations to do between measurements
@@ -520,7 +575,8 @@ void simulate_diagram(CNetwork<double> &net, double &selected_var, const double 
     for (selected_var=var0; selected_var < varf; selected_var += dvar)
     {
         cout << selected_var << endl;
-        simulate_single(net, output, selected_var);
+        //simulate_single(net, output, selected_var);
+        simulate_single_shinomoto(net, output, selected_var);
     }
     output.close();
 }
