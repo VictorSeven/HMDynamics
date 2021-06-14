@@ -48,7 +48,7 @@ def generate_er_network(n,k,name):
 
 generate_er_network(100, 12.0, "single-modulo") #Single modulo
 generate_er_network(6400, 12.0, "erdos-renyi")  #Complete ER with same connectivity as modulus
-generate_er_network(6400, 30.0,  "er-cb6")      #ER with same average degree as CB6 network
+generate_er_network(6400, 30.0,  "er-cb6-bist")      #ER with same average degree as CB6 network
 
 print("Erdos-Renyi OK")
 
@@ -65,7 +65,7 @@ k = [12] + [k0 + dk*j for j in range(depth)]
 #Convert lists to string
 n = list2str(n)  
 k = list2str(k) 
-netfile = netfolder + "rb{d}".format(d=depth)
+netfile = netfolder + "rb{d}-bist".format(d=depth)
 
 #Create network
 system("{launch}{exe} --random {nlv} {n} {k} {save}".format(nlv=depth+1, launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), save=netfile))
@@ -76,7 +76,7 @@ print("Binary HMRandom OK")
 depth = 6
 
 #Same procedure as before
-n = [100] + [2 for j in range(depth)]
+n = [25] + [2 for j in range(depth)]
 k0, kf = 5, 0.1
 dk = (kf - k0) / depth
 k = [12] + [k0 + dk*j for j in range(depth)]
@@ -86,7 +86,7 @@ g = [0] + [2 for j in range(depth)] #Scale-free exponent of each module (0 means
 n = list2str(n)  
 k = list2str(k) 
 g = list2str(g)
-netfile = netfolder + "cb{d}".format(d=depth)
+netfile = netfolder + "cb{d}-bist".format(d=depth)
 
 #Create network
 system("{launch}{exe} --core {nlv} {n} {k} {g} {save}".format(nlv=depth+1, launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), g=" ".join(g), save=netfile))

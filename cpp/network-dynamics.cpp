@@ -303,15 +303,18 @@ void initial_conditions(CNetwork<double> &net)
     double x,y;
     int n_moduli;
     
-    gaussian = normal_distribution<double>(w0, delta);
+    //gaussian = normal_distribution<double>(w0, delta);
+    normal_distribution<double> gaussian1 = normal_distribution<double>(w0, delta);
+    normal_distribution<double> gaussian2 = normal_distribution<double>(-w0, delta);
+
     n_moduli = N / osc_per_modulus;
     vector<double> wmoduli = vector<double>(n_moduli);  
+
     for (i=0; i < n_moduli; i++)
     {
-        wmoduli[i] = gaussian(gen);
+        //wmoduli[i] = gaussian(gen);
+        wmoduli[i] = ran_u(gen) < 0.5 ? gaussian1(gen) : gaussian2(gen);
     }
-
-    cout << "b" << endl;
 
     //Set initial conditions
     x = y = 0.0;
