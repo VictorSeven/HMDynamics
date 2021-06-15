@@ -20,7 +20,7 @@ else:
 # --- C++ compilation and preparation 
 
 #For compiling, also defining some important paths
-datafolder = path_2_this + "/../data/functional-data/"
+datafolder = path_2_this + "/../data/functional-data-bist/"
 cppfolder = path_2_this + "/../cpp/"
 cppfile = cppfolder + "network-dynamics.cpp"
 cppoutput = cppfolder + "bin/chimera.exe"
@@ -66,39 +66,55 @@ def launch_runs(params, extension, network=None):
 
 # --- Run dynamics for each network 
 
-name_list = ["hopf_sub", "hopf_crit", "hopf_super", "hopf_exc_sub", "hopf_exc_crit", "hopf_exc_super", "hyb_sub", "hyb_crit", "hyb_super", "snic_sub", "snic_crit", "snic_super"]
+#name_list = ["hopf_sub", "hopf_crit", "hopf_super", "hopf_exc_sub", "hopf_exc_crit", "hopf_exc_super", "hyb_sub", "hyb_crit", "hyb_super", "snic_sub", "snic_crit", "snic_super"]
+name_list = ["hopf_sub", "hopf_crit", "hopf_super", "hyb_sub", "hyb_crit", "hyb_super", "snic_sub", "snic_crit", "snic_super"]
 
 network = "er-cb6"
-#a_list = [0.0, 0.0,  0.0,  0.5, 0.5, 0.5,    0.9,   1.07,   1.1,  0.9,   1.0,  1.1]
-#s_list = [0.8, 0.95, 1.1,  0.7, 0.84, 0.95,  0.5,   0.5,    0.5,  0.3,   0.3,  0.3] 
+#Unimodal
+#a_list = [0.0, 0.0,  0.0,  0.5, 0.5, 0.5,    0.9,   1.06,   1.2,     0.9,   1.025,  1.1]
+#s_list = [0.8, 0.95, 1.1,  0.7, 0.84, 0.95,  0.465, 0.465,  0.465,   0.3,   0.3,  0.3] 
+#for a,s,name in zip(a_list, s_list, name_list):
+#    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
+#    launch_runs(params, name, network)
 
-
-a_list = [0.0, 0.0,  0.0,  0.5, 0.5, 0.5,    0.9,   1.06,   1.2,     0.9,   1.025,  1.1]
-s_list = [0.8, 0.95, 1.1,  0.7, 0.84, 0.95,  0.465, 0.465,  0.465,   0.3,   0.3,  0.3]
-
-for a,s,name in zip(a_list, s_list, name_list):
-    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
-    launch_runs(params, name, network)
+#Bimodal
+w_list = [0.0, 0.0,  0.0,    0.3,  0.41, 0.5,      0.25, 0.36, 0.5]
+d_list = [0.25, 0.25, 0.25,  0.15, 0.15, 0.15,     0.28, 0.28, 0.28]
+q_list = [0.2, 0.45, 0.65,    1.0,  1.0,  1.0,      1.0,  1.0,  1.0] 
+for w0,d,q,name in zip(w_list, d_list, q_list, name_list):
+    params = {"w0":w0, "a":0.0, "delta":d, "s":0.2, "q":q, "nmoduli": 25}
+    launch_runs(params, name, network+"-bist")
 
 
 network = "rb6"
-#a_list = [0.0, 0.0,  0.0,   0.5, 0.5,  0.5,   0.9,  1.07, 1.2,   0.9, 1.0,  1.1]
-#s_list = [0.5, 0.75, 1.1,   0.5, 0.78, 0.8,   0.5,  0.5,  0.5,   0.3,  0.3, 0.3] 
+#Unimodal
+#a_list = [0.0, 0.0,  0.0,   0.5, 0.5,  0.5,   0.9,  1.06, 1.2,   0.9, 1.025,  1.1]
+#s_list = [0.5, 0.75, 1.1,   0.5, 0.78, 0.8,   0.455,0.455,0.455, 0.325,0.325, 0.325] 
+#for a,s,name in zip(a_list, s_list, name_list):
+#    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
+#    launch_runs(params, name, network)
 
-a_list = [0.0, 0.0,  0.0,   0.5, 0.5,  0.5,   0.9,  1.06, 1.2,   0.9, 1.025,  1.1]
-s_list = [0.5, 0.75, 1.1,   0.5, 0.78, 0.8,   0.455,0.455,0.455, 0.325,0.325, 0.325]
-for a,s,name in zip(a_list, s_list, name_list):
-    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
-    launch_runs(params, name, network)
+#Bimodal
+w_list = [0.0, 0.0,  0.0,    0.3,  0.41, 0.5,      0.25, 0.35, 0.5]
+d_list = [0.25, 0.25, 0.25,  0.15, 0.15, 0.15,     0.28, 0.28, 0.28]
+q_list = [0.2, 0.52, 0.65,    1.0,  1.0,  1.0,      1.0,  1.0,  1.0] 
+for w0,d,q,name in zip(w_list, d_list, q_list, name_list):
+    params = {"w0":w0, "a":0.0, "delta":d, "s":0.2, "q":q, "nmoduli": 25}
+    launch_runs(params, name, network+"-bist")
 
 
 network = "cb6"
-#a_list = [0.0, 0.0,  0.0,   0.5, 0.5,  0.5,   0.9,  1.07, 1.2,   0.9,  1.0, 1.1]
-#s_list = [0.5, 0.8, 1.1,    0.5, 0.8, 0.8,    0.5,  0.5,  0.5,   0.3,  0.3, 0.3] 
+#Unimodal
+#a_list = [0.0, 0.0,  0.0,   0.5, 0.5,  0.5,   0.9,  1.06, 1.2,    0.9, 1.025, 1.1]
+#s_list = [0.5, 0.8, 1.1,    0.5, 0.8, 0.8,    0.455,0.455,0.455,  0.3, 0.3,  0.3] 
+#for a,s,name in zip(a_list, s_list, name_list):
+#    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
+#    launch_runs(params, name, network)
 
-
-a_list = [0.0, 0.0,  0.0,   0.5, 0.5,  0.5,   0.9,  1.06, 1.2,    0.9, 1.025, 1.1]
-s_list = [0.5, 0.8, 1.1,    0.5, 0.8,  1.0,   0.455,0.455,0.455,  0.3, 0.3,  0.3]
-for a,s,name in zip(a_list, s_list, name_list):
-    params = {"w0":1.0, "a":a, "delta":0.1, "s":s, "q":1.0, "nmoduli": 100}
-    launch_runs(params, name, network)
+#Bimodal
+w_list = [0.0, 0.0,  0.0,    0.15,  0.35, 0.5,      0.25, 0.36, 0.5]
+d_list = [0.25, 0.25, 0.25,  0.15, 0.15, 0.15,     0.28, 0.28, 0.28]
+q_list = [0.2, 0.45, 0.65,    1.0,  1.0,  1.0,      1.0,  1.0,  1.0] 
+for w0,d,q,name in zip(w_list, d_list, q_list, name_list):
+    params = {"w0":w0, "a":0.0, "delta":d, "s":0.2, "q":q, "nmoduli": 25}
+    launch_runs(params, name, network+"-bist")
