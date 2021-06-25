@@ -14,7 +14,7 @@
 #define CHIMERA 4 
 
 #ifndef MODE
-#define MODE DIAGRAM 
+#define MODE CHIMERA 
 #endif 
 
 //Include libraries
