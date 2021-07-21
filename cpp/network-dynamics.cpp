@@ -14,7 +14,7 @@
 #define CHIMERA 4 
 
 #ifndef MODE
-#define MODE CHIMERA 
+#define MODE DIAGRAM 
 #endif 
 
 //Include libraries
@@ -66,8 +66,8 @@ string filename = "kuramoto";
 const double dt = 0.01;
 const double sqdt = sqrt(dt);
 
-double tf = 10.0;
-double trelax = 600.0;
+double tf = 200.0;
+double trelax = 100.0;
 const double tmeasure = 5.0;
 const int nitswindow = 50;
 
@@ -122,39 +122,45 @@ int main(int argc, char* argv[])
         output.close();
     #elif MODE==DIAGRAM
         
-        double si, sf;
+        double qi, qf;
         double ai, af;
-        int ns, na;
+        int nq, na;
         bool variable_a;
+        int seed;
 
-        if (argc == 11)
+        if (argc == 12)
         {
             w0    = stod(argv[1]);
             delta = stod(argv[2]);
-            q     = stod(argv[3]);
+            s     = stod(argv[3]);
             variable_a = stoi(argv[4]);
+
             if (!variable_a)
             {
-                a0     = stod(argv[5]);
-                si    = stod(argv[6]);
-                sf    = stod(argv[7]);
-                ns    = stoi(argv[8]);
+                a0    = stod(argv[5]);
+                qi    = stod(argv[6]);
+                qf    = stod(argv[7]);
+                nq    = stoi(argv[8]);
             }
             else 
             {
-                s     = stod(argv[5]);
-                ai    = stod(argv[6]);
-                af    = stod(argv[7]);
-                na    = stoi(argv[8]);
+                q    = stod(argv[5]);
+                ai   = stod(argv[6]);
+                af   = stod(argv[7]);
+                na   = stoi(argv[8]);
             }
             networkname = string(argv[9]);
             filename = string(argv[10]); 
+            seed = stoi(argv[11]);
+            filename = filename + to_string(seed);
         }
         else
         {
             cout << "[HMDYNAMICS]: incorrect number of arguments" << endl;
             return EXIT_SUCCESS;        
         }
+
+        gen = mt19937(13513 + 12345 *seed + 1234 * seed * seed + seed*seed*seed);
 
         //Set up the network, including initial conditions
         correct_setup = set_up_network(net, networkname);
@@ -166,7 +172,7 @@ int main(int argc, char* argv[])
         }
         
         if (variable_a) simulate_diagram(net, a0, ai, af, na, output);
-        else simulate_diagram(net, s, si, sf, ns, output);
+        else simulate_diagram(net, q, qi, qf, nq, output);
 //        simulate_diagram(net, s0, sf, ns, output);
     #elif MODE==TIMESERIES
         double t;
@@ -304,18 +310,12 @@ void initial_conditions(CNetwork<double> &net)
     double x,y;
     int n_moduli;
     
-    //gaussian = normal_distribution<double>(w0, delta);
-    normal_distribution<double> gaussian1 = normal_distribution<double>(w0, delta);
-    normal_distribution<double> gaussian2 = normal_distribution<double>(-w0, delta);
+    gaussian = normal_distribution<double>(w0, delta);
 
     n_moduli = N / osc_per_modulus;
     vector<double> wmoduli = vector<double>(n_moduli);  
 
-    for (i=0; i < n_moduli; i++)
-    {
-        //wmoduli[i] = gaussian(gen);
-        wmoduli[i] = ran_u(gen) < 0.5 ? gaussian1(gen) : gaussian2(gen);
-    }
+    for (i=0; i < n_moduli; i++) wmoduli[i] = gaussian(gen);
 
     //Set initial conditions
     x = y = 0.0;
@@ -578,8 +578,8 @@ void simulate_diagram(CNetwork<double> &net, double &selected_var, const double 
     for (selected_var=var0; selected_var < varf; selected_var += dvar)
     {
         cout << selected_var << endl;
-        //simulate_single(net, output, selected_var);
-        simulate_single_shinomoto(net, output, selected_var);
+        simulate_single(net, output, selected_var);
+        //simulate_single_shinomoto(net, output, selected_var);
     }
     output.close();
 }

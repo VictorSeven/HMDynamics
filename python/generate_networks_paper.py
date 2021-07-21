@@ -11,7 +11,7 @@ def list2str(lista):
 
 # --- C++ compilation and preparation 
 
-is_proteus = False 
+is_proteus = True 
 
 #Set an adequate launch command depending on system
 if is_proteus:
@@ -46,9 +46,8 @@ def generate_er_network(n,k,name):
 
     system("{launch}{exe} --random 1 {n} {k} {save}".format(launch=launch, exe=cppoutput, n=n, k=k, save=netfile))
 
-generate_er_network(100, 12.0, "single-modulo") #Single modulo
-generate_er_network(6400, 12.0, "erdos-renyi")  #Complete ER with same connectivity as modulus
-generate_er_network(6400, 30.0,  "er-cb6-bist")      #ER with same average degree as CB6 network
+generate_er_network(100,  12.0, "single-module")  #Complete ER with same connectivity as modulus
+generate_er_network(6400, 30.0, "erdos-renyi")   #Complete ER with same connectivity as modulus
 
 print("Erdos-Renyi OK")
 
@@ -76,7 +75,7 @@ print("Binary HMRandom OK")
 depth = 6
 
 #Same procedure as before
-n = [25] + [2 for j in range(depth)]
+n = [100] + [2 for j in range(depth)]
 k0, kf = 5, 0.1
 dk = (kf - k0) / depth
 k = [12] + [k0 + dk*j for j in range(depth)]
