@@ -64,7 +64,7 @@ k = [12] + [k0 + dk*j for j in range(depth)]
 #Convert lists to string
 n = list2str(n)  
 k = list2str(k) 
-netfile = netfolder + "rb{d}-bist".format(d=depth)
+netfile = netfolder + "random".format(d=depth)
 
 #Create network
 system("{launch}{exe} --random {nlv} {n} {k} {save}".format(nlv=depth+1, launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), save=netfile))
@@ -85,7 +85,7 @@ g = [0] + [2 for j in range(depth)] #Scale-free exponent of each module (0 means
 n = list2str(n)  
 k = list2str(k) 
 g = list2str(g)
-netfile = netfolder + "cb{d}-bist".format(d=depth)
+netfile = netfolder + "core".format(d=depth)
 
 #Create network
 system("{launch}{exe} --core {nlv} {n} {k} {g} {save}".format(nlv=depth+1, launch=launch, exe=cppoutput, n=" ".join(n), k=" ".join(k), g=" ".join(g), save=netfile))

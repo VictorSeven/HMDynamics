@@ -7,12 +7,13 @@ import os
 
 # --- Simulation parameters
 
-q0, qf, nq = 0.0, 2.0, 100
 delta, s = 0.5, 0.4
+q_values = [0.0, 7.0, 100]
+a_values = [0.0, 0.8]
 w = 1.0
 
-networks = ["single-module", "erdos-renyi", "random", "core"]
-n_averages = 100
+networks = ["erdos-renyi", "random", "core"]
+n_averages = 50 
 
 fileout = "../data/phase-diagram-coupling/"
 
@@ -56,11 +57,6 @@ def launch_runs(params, extension, var_space):
 
 # --- Run dynamics for each network 
 
-#Fixed = a
-stocht_noise, determ_noise = s, delta  
-q_values = [q0, qf, nq]
-a_values = [0.0, 0.3, 0.8, 1.07]
-
 for a in a_values:
-    params = {"w0":w, "variable_a":0, "fixed":a, "delta":determ_noise, "s":stocht_noise}
+    params = {"w0":w, "variable_a":0, "fixed":a, "delta":delta, "s":s}
     launch_runs(params, "a{0:.2f}".format(a), q_values)
